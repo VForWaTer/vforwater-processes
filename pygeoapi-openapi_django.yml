@@ -120,7 +120,7 @@ components:
           description: a human readable title for the queryable
           type: string
         type:
-          description: the data type of the queryable
+          description: the test-data type of the queryable
           type: string
         type-ref:
           description: a reference to the formal definition of the type
@@ -144,7 +144,7 @@ info:
     email: you@example.org
     name: Organization Name
     url: https://pygeoapi.io
-  description: pygeoapi provides an API to geospatial data
+  description: pygeoapi provides an API to geospatial test-data
   license:
     name: CC-BY 4.0 license
     url: https://creativecommons.org/licenses/by/4.0/
@@ -153,7 +153,7 @@ info:
   version: 0.13.0
   x-keywords:
   - geospatial
-  - data
+  - test-data
   - api
 openapi: 3.0.2
 paths:
@@ -207,7 +207,7 @@ paths:
           $ref: https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/ogcapi-features-1.yaml#/components/responses/NotFound
         '500':
           $ref: https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/ogcapi-features-1.yaml#/components/responses/ServerError
-      summary: Get Open Canada sample data metadata
+      summary: Get Open Canada sample test-data metadata
       tags:
       - canada-metadata
   /collections/canada-metadata/items:
@@ -344,7 +344,7 @@ paths:
           $ref: https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/ogcapi-features-1.yaml#/components/responses/NotFound
         '500':
           $ref: https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/ogcapi-features-1.yaml#/components/responses/ServerError
-      summary: Get Open Canada sample data items
+      summary: Get Open Canada sample test-data items
       tags:
       - canada-metadata
   /collections/canada-metadata/items/{featureId}:
@@ -364,7 +364,7 @@ paths:
           $ref: https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/ogcapi-features-1.yaml#/components/responses/NotFound
         '500':
           $ref: https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/ogcapi-features-1.yaml#/components/responses/ServerError
-      summary: Get Open Canada sample data item by id
+      summary: Get Open Canada sample test-data item by id
       tags:
       - canada-metadata
   /collections/canada-metadata/queryables:
@@ -383,7 +383,7 @@ paths:
           $ref: https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/ogcapi-features-1.yaml#/components/responses/NotFound
         '500':
           $ref: https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/ogcapi-features-1.yaml#/components/responses/ServerError
-      summary: Get Open Canada sample data queryables
+      summary: Get Open Canada sample test-data queryables
       tags:
       - canada-metadata
   /collections/gdps-temperature:
@@ -918,10 +918,10 @@ paths:
       tags:
       - stac
 servers:
-- description: pygeoapi provides an API to geospatial data
+- description: pygeoapi provides an API to geospatial test-data
   url: http://localhost:8001/geoapi
 tags:
-- description: pygeoapi provides an API to geospatial data
+- description: pygeoapi provides an API to geospatial test-data
   externalDocs:
     description: information
     url: https://example.org
