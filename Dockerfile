@@ -4,6 +4,7 @@ RUN useradd --create-home geoapi
 
 COPY ./ /home/geoapi
 WORKDIR /home/geoapi
+RUN chown -R geoapi:geoapi /home/geoapi
 
 RUN pip install --upgrade pip &&  \
     pip install -r requirements.txt

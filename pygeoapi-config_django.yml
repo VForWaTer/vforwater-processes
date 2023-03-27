@@ -274,7 +274,7 @@ resources:
         processor:
             name: HelloWorld
 
-    test_process: # name of process
+    dataset_profiler: # name of process
       type: process  # REQUIRED (collection, process, or stac-collection)
       processor:
-        name: processes.test_process.TestProcessProcessor  # Python path of process defition
+        name: processes.dataset_profiler.DatasetProfilerProcessor  # Python path of process defition
