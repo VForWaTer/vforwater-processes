@@ -1,26 +1,30 @@
 import logging
 
 from pygeoapi.process.base import BaseProcessor, ProcessorExecuteError
-import os
-import pandas as pd
-from toolbox_runner import list_tools
-from toolbox_runner.run import get_remote_image_list
+# import os
+# import ast
+# import sys
+# import os
+# import uuid as pyuuid
+# import re
+# import json
+# import pandas as pd
+# import datetime
+# from datetime import datetime as dt
 
 LOGGER = logging.getLogger(__name__)
 
 #: Process metadata and description
 PROCESS_METADATA = {
     'version': '0.2.0',
-    'id': 'dataset_profiler',
+    'id': 'database_loader',
     'title': {
-        'en': 'dataset profiler',
-        'de': 'Datensatzprofile'
+        'en': 'database_loader',
+        'de': 'Datenbanklader'
     },
     'description': {
-        'en': 'A tool for generating statistical dataset reports '
-              'in HTML and JSON using standardized input and outputs.',
-        'de': 'Ein Tool zum Generieren statistischer Datensatzberichte '
-              'in HTML und JSON unter Verwendung standardisierter Eingaben und Ausgaben.',
+        'en': 'A tool for loading data from database.',
+        'de': 'Ein Tool zum Laden von Daten aus einer Datenbank.',
     },
     'keywords': ['dataset profiler', 'HTML', 'JSON'],
     'links': [{
@@ -61,14 +65,14 @@ PROCESS_METADATA = {
 }
 
 
-class DatasetProfilerProcessor(BaseProcessor):
-    """dataset profiler Processor"""
+class DatabaseLoaderProcessor(BaseProcessor):
+    """internal V-FOR-WaTer database Loader"""
 
     def __init__(self, processor_def):
         """
         Initialize object
         :param processor_def: provider definition
-        :returns: pygeoapi.process.dataset_profiler.DatasetProfilerProcessor
+        :returns: pygeoapi.process.database_loader.DatabaseLoaderProcessor
         """
 
         super().__init__(processor_def, PROCESS_METADATA)
@@ -81,23 +85,7 @@ class DatasetProfilerProcessor(BaseProcessor):
         if df is None:
             raise ProcessorExecuteError('Cannot process without a dataset')
 
-        # load all images
-        images = get_remote_image_list()
-
-        in_dir = '/home/geoapi/in'
-        out_dir = '/home/geoapi/out'
-
-        # df.to_csv(in_dir+'dataframe.csv')
-
-        for image in images:
-            if 'profile' in image:
-                os.system(f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out {image}")
         res = 'completed'
-
-        # tools = list_tools('ghcr', as_dict=True)
-        # prof = tools.get('profile')
-        # dataset = pd.read_csv(df)
-        # res = prof.run(result_path='out/', data=dataset)
 
         outputs = {
             'id': 'res',
@@ -107,4 +95,4 @@ class DatasetProfilerProcessor(BaseProcessor):
         return mimetype, outputs
 
     def __repr__(self):
-        return '<DatasetProfilerProcessor> completed!'
+        return '<DatabaseLoaderProcessor> completed!'

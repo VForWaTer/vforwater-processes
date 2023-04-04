@@ -278,3 +278,8 @@ resources:
         type: process  # REQUIRED (collection, process, or stac-collection)
         processor:
             name: processes.dataset_profiler.DatasetProfilerProcessor  # Python path of process defition
+
+    database_loader:
+        type: process
+        processor:
+            name: processes.database_loader.DatabaseLoaderProcessor
