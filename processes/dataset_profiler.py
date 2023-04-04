@@ -10,7 +10,7 @@ LOGGER = logging.getLogger(__name__)
 
 #: Process metadata and description
 PROCESS_METADATA = {
-    'version': '0.2.0',
+    'version': '0.2.1',
     'id': 'dataset_profiler',
     'title': {
         'en': 'dataset profiler',
