@@ -50,8 +50,8 @@ server:
         attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
     manager:
         name: TinyDB
-        connection: /tinydb/gpm.db
-        output_dir: /tinydb/
+        connection: tinydb/gpm.db
+        output_dir: tinydb/
     # ogc_schemas_location: /opt/schemas.opengis.net
 
 logging:
