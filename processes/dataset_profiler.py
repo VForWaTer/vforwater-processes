@@ -1,4 +1,5 @@
 import logging
+import json
 
 from pygeoapi.process.base import BaseProcessor, ProcessorExecuteError
 import os
@@ -76,16 +77,24 @@ class DatasetProfilerProcessor(BaseProcessor):
     def execute(self, data):
 
         mimetype = 'application/json'
-        df = data.get('df')
+        df = data.get('df')  # get foldername
 
         if df is None:
             raise ProcessorExecuteError('Cannot process without a dataset')
 
-        # load all images
+        # load all images (podman images!)
         images = get_remote_image_list()
 
-        in_dir = '/home/geoapi/in'
-        out_dir = '/home/geoapi/out'
+        in_dir = '/home/geoapi/in/' + df
+        out_dir = '/home/geoapi/out/' + df
+        
+        metadata = {
+            "profile": {
+                "data": "/in/" + df + "/dataframe.csv"
+            }
+        }    
+        with open(in_dir + 'parameters.json', 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=4)
 
         # df.to_csv(in_dir+'dataframe.csv')
 
