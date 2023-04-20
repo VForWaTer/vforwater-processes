@@ -85,21 +85,21 @@ class DatasetProfilerProcessor(BaseProcessor):
         # load all images (podman images!)
         images = get_remote_image_list()
 
-        in_dir = '/home/geoapi/in/' + df + '/'
-        out_dir = '/home/geoapi/out/' + df + '/'
+        in_dir = '/home/geoapi/in/' + df
+        out_dir = '/home/geoapi/out/' + df
 
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
         metadata = {
             "profile": {
-                "data": "/in/" + df + "/dataframe.csv"
+                "data": "/in/dataframe.csv"
             }
         }    
-        with open(in_dir + 'parameters.json', 'w', encoding='utf-8') as f:
+        with open(in_dir + '/parameters.json', 'w', encoding='utf-8') as f:
             json.dump(metadata, f, ensure_ascii=False, indent=4)
 
-        # df.to_csv(in_dir+'dataframe.csv')
+        # df.to_csv(in_dir+'dataframe.csv')s
 
         for image in images:
             if 'profile' in image:
