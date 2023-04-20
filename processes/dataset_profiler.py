@@ -85,8 +85,8 @@ class DatasetProfilerProcessor(BaseProcessor):
         # load all images (podman images!)
         images = get_remote_image_list()
 
-        in_dir = '/home/geoapi/in/' + df
-        out_dir = '/home/geoapi/out/' + df
+        in_dir = '/home/geoapi/in/' + df + '/'
+        out_dir = '/home/geoapi/out/' + df + '/'
 
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
