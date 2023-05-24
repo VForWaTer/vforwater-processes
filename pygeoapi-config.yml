@@ -283,3 +283,8 @@ resources:
         type: process
         processor:
             name: processes.database_loader.DatabaseLoaderProcessor
+
+    variogram:
+        type: process
+        processor:
+            name: processes.variogram.VariogramProcessor

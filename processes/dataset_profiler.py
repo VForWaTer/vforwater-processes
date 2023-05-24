@@ -9,9 +9,13 @@ from toolbox_runner.run import get_remote_image_list
 
 LOGGER = logging.getLogger(__name__)
 
-#: Process metadata and description
+#: Process metadata and description.
+# Details on the description of Processes are available here:
+# https://docs.ogc.org/is/18-062r2/18-062r2.html#ogc_process_description
+# and an example is available here:
+# https://schemas.opengis.net/ogcapi/processes/part1/1.0/examples/json/ProcessDescription.json
 PROCESS_METADATA = {
-    'version': '0.2.1',
+    'version': '0.2.2',
     'id': 'dataset_profiler',
     'title': {
         'en': 'dataset profiler',
@@ -95,7 +99,7 @@ class DatasetProfilerProcessor(BaseProcessor):
             "profile": {
                 "data": "/in/dataframe.csv"
             }
-        }    
+        }
         with open(in_dir + '/parameters.json', 'w', encoding='utf-8') as f:
             json.dump(metadata, f, ensure_ascii=False, indent=4)
 
@@ -113,7 +117,8 @@ class DatasetProfilerProcessor(BaseProcessor):
 
         outputs = {
             'id': 'res',
-            'value': res
+            'value': res,
+            'dir': out_dir
         }
 
         return mimetype, outputs
