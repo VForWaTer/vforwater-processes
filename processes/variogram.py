@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 #: Process metadata and description
 PROCESS_METADATA = {
-    'version': '0.0.1',
+    'version': '0.0.2',
     'id': 'variogram',
     'title': {
         'en': 'Variogram fitting',
@@ -368,9 +368,9 @@ class VariogramProcessor(BaseProcessor):
         # df.to_csv(in_dir+'dataframe.csv')s
 
         for image in images:
-            if 'variogram' in image:
-                # os.system(f"docker run --rm -t --network=host -v {in_dir}:/in -v {out_dir}:/out {image}")
-                os.system(f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out {image}")
+            if 'skgstat' in image:
+                # os.system(f"docker run --rm -t --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=variogram {image}")
+                os.system(f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=variogram {image}")
             else:
                 print('Error in processes - variogram.py. Cannot load docker image.')
 
