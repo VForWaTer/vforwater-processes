@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 #: Process metadata and description
 PROCESS_METADATA = {
-    'version': '0.0.2',
+    'version': '0.0.3',
     'id': 'variogram',
     'title': {
         'en': 'Variogram fitting',
@@ -104,7 +104,7 @@ PROCESS_METADATA = {
                            # '’ward’ uses hierarchical clustering to find minimum-variance clusters. '
                            'More details are given in the documentation for set_bin_func.',
             'schema': {
-                'type': 'str, callable, iterable',  # 'enum'
+                'type': 'string',  # 'enum'
                 'enum': ['Even', 'Uniform', 'Freedman-Diaconis estimator', 'Sturge’s rule', 'Scott’s rule',
                          'Doane’s extension', 'Square-root of distance', 'KMeans clustering',
                          'Hierarchical clustering'],
@@ -142,12 +142,12 @@ PROCESS_METADATA = {
                            # 'the 1D distance matrix (flattened upper triangle) and return a scalar, that converges '
                            # 'towards small values for similarity (high covariance).',
             'schema': {
-                'type': 'string, callable',  # 'enum'
+                'type': 'string',  # 'enum'
                 'enum': ['Matheron estimator', 'Cressie-Hawkins', 'Dowd-Estimator',
                          'Genton', 'MinMax Scaler',
                          'Shannon Entropy'
                          ],
-                'default': 'Matheron',
+                'default': 'Matheron estimator',
                 'required': 'true'
             },
         },
@@ -206,7 +206,7 @@ PROCESS_METADATA = {
                            'third (or fourth) fitting parameter. A nugget is essentially the y-axis interception of '
                            'the theoretical variogram function.',
             'schema': {
-                'type': 'bool',
+                'type': 'boolean',
                 'default': 'false',  # False sets the nugget parameter to 0
                 'required': 'true'
             },
