@@ -2,9 +2,12 @@ pygeoapi
 Babel
 click>7,<=8
 flask
-jinja2==3.0.3
+jinja2==3.1.2
 jsonschema
-pydantic
+pandas
+polars
+pyarrow
+pydantic<2.0  # pydantic >= 2.0.2 uses pattern instead of regex
 pygeofilter
 pygeoif
 pyproj
@@ -14,8 +17,8 @@ PyYAML
 rasterio
 requests
 shapely<2.0
-SQLAlchemy<2.0.0
+SQLAlchemy==2.0.18
 tinydb
 unicodecsv
-pandas
 toolbox_runner
+json2args

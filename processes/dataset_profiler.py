@@ -107,7 +107,8 @@ class DatasetProfilerProcessor(BaseProcessor):
 
         for image in images:
             if 'profile' in image:
-                os.system(f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out {image}")
+                os.system(f"docker run --rm -t --network=host -v {in_dir}:/in -v {out_dir}:/out {image}")
+                # os.system(f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out {image}")
         res = 'completed'
 
         # tools = list_tools('ghcr', as_dict=True)

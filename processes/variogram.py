@@ -84,7 +84,7 @@ PROCESS_METADATA = {
         },
         'bin_func': {
             'title': 'bin Function',
-            'description': 'String identifying the binning function used to find lag class edges. All methods '
+            'description': 'The binning function used to find lag class edges. All methods '
                            'calculate bin edges on the interval [0, maxlag[. Possible values are: '
                            '’even’ (default) finds n_lags same width bins '
                            '’uniform’ forms n_lags bins of same data count '
@@ -114,7 +114,7 @@ PROCESS_METADATA = {
         },
         'model': {
             'title': 'Model',
-            'description': 'String identifying the theoretical variogram function to be used to describe the '
+            'description': 'The theoretical variogram function to be used to describe the '
                            'experimental variogram. Can be one of: ’Spherical’ (default), ’Exponential’, ’Gaussian’, '
                            '’Cubic’, ’Stable model’, ’Matérn model’, ’Nugget effect variogram’',
                            # 'experimental variogram. Can be one of: spherical [Spherical, default], '
@@ -130,7 +130,7 @@ PROCESS_METADATA = {
         },
         'estimator': {
             'title': 'Estimator',
-            'description': 'String identifying the semi-variance estimator to be used. Possible values are: '
+            'description': 'The semi-variance estimator to be used. Possible values are: '
                            '’Matheron estimator’ (default), ’Cressie-Hawkins’, ’Dowd-Estimator’, ’Genton’, ’MinMax’, '
                            '’Scaler’, ’Shannon Entropy’. If a callable is passed, it has to accept an array of '
                            'absolute differences, aligned to the 1D distance matrix (flattened upper triangle) and '
@@ -170,7 +170,7 @@ PROCESS_METADATA = {
         },
         'fit_method': {
             'title': 'Fit Method',
-            'description': 'String identifying the method to be used for fitting the theoretical variogram function '
+            'description': 'Method to be used for fitting the theoretical variogram function '
                            'to the experimental. If None is passed, the fit does not run. More info is given in the '
                            'Variogram.fit docs. Can be one of:'
                            '’Levenberg-Marquardt algorithm’ for unconstrained problems. This is the faster algorithm, '
@@ -213,7 +213,7 @@ PROCESS_METADATA = {
         },
         'fit_range': {  # TODO: indicator to connect to fit_method
             'title': 'Fit range',
-            'description': 'Only valid if fit_method="manual". The variogram effective range.',
+            'description': 'The variogram effective range. Only valid if fit_method="manual".',
             'schema': {
                 'type': 'number',
                 'format': 'float',
@@ -222,7 +222,7 @@ PROCESS_METADATA = {
         },
         'fit_sill': {  # TODO: indicator to connect to fit_method
             'title': 'Fit sill',
-            'description': 'Only valid if fit_method="manual". The variogram sill.',
+            'description': 'The variogram sill. Only valid if fit_method="manual".',
             'schema': {
                 'type': 'number',
                 'format': 'float'
@@ -231,7 +231,7 @@ PROCESS_METADATA = {
         },
         'fit_nugget': {  # TODO: indicator to connect to fit_method
             'title': 'Fit nugget',
-            'description': 'Only valid if fit_method="manual". The variogram nugget.',
+            'description': 'The variogram nugget. Only valid if fit_method="manual".',
             'schema': {
                 'type': 'number',
                 'format': 'float'
@@ -240,7 +240,7 @@ PROCESS_METADATA = {
         },
         'fit_sigma': {
             'title': 'Fit sigma',
-            'description': 'Defaults to None. The sigma is used as measure of uncertainty during variogram fit. If '
+            'description': 'The sigma is used as measure of uncertainty during variogram fit. If '
                            'fit_sigma is an array, it has to hold n_lags elements, giving the uncertainty for all '
                            'lags classes. If fit_sigma is None (default), it will give no weight to any lag. Higher '
                            'values indicate higher uncertainty and will lower the influence of the corresponding '
