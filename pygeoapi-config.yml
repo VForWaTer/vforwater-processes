@@ -278,7 +278,7 @@ resources:
         type: process
         processor:
 #            name: VforwaterLoader
-            name: processes.database_loader.VforwaterLoaderProcessor  # Python path of process defition
+            name: processes.tool_vforwater_loader.VforwaterLoaderProcessor  # Python path of process defition
 
     dataset_profiler: # name of process
         type: process  # REQUIRED (collection, process, or stac-collection)
