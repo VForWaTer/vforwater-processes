@@ -295,7 +295,8 @@ resources:
         processor:
             name: processes.variogram.VariogramProcessor
 
-    point_in_time_from_group:
-        type: process
-        processor:
-            name: processes.point_in_time_from_group.PointInTimeFromGroup
+#    point_in_time_from_group:
+#        type: process
+#        processor:
+#            name: PointInTimeFromGroup
+#            name: processes.point_in_time_from_group.PointInTimeFromGroup
