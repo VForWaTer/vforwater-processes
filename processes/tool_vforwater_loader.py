@@ -48,7 +48,7 @@ PROCESS_METADATA = {
                 'required': 'true'
             },
             'minOccurs': 1,  # expect the data is needed
-            # 'maxOccurs': 1,
+            'maxOccurs': 0,
         },
         'reference_area': {
             'title': 'Coordinates',
@@ -102,19 +102,19 @@ PROCESS_METADATA = {
     'example': {
         'inputs': {
             'dataset_ids': [1, 2, 19],
-            'start_date': "2000-01-01T12:00:00+01",
-            'end_date': "2014-01-01T12:00:00+01",
+            'start_date': '2000-01-01T12:00:00+01',
+            'end_date': '2014-01-01T12:00:00+01',
             'reference_area': {
-                "type": "Feature",
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [[[8.9771580802, 47.2703623267],
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Polygon',
+                    'coordinates': [[[8.9771580802, 47.2703623267],
                                      [13.83504270839, 47.2703623267],
                                      [13.8350427083, 50.5644529365],
                                      [8.9771580802, 50.5644529365],
                                      [8.9771580802, 47.2703623267]]]
                 },
-                "properties": "Bayern"
+                'properties': 'Bayern'
             }
         }
     }
