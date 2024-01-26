@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 #: Process metadata and description
 PROCESS_METADATA = {
     'version': '0.4.0',
-    'id': 'vforwater_loader',
+    'id': 'tool_vforwater_loader',
     'title': {
         'en': 'Loader for datasets stored in a metacatalog instance.',
         'de': 'Lader für Datensätze, die in einer Metakatalog-Instanz gespeichert sind.'
@@ -128,7 +128,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         """
         Initialize object
         :param processor_def: provider definition
-        :returns: pygeoapi.process.VforwaterLoader
+        :returns: pygeoapi.process.VforwaterLoaderProcessor
         """
 
         super().__init__(processor_def, PROCESS_METADATA)
@@ -195,4 +195,4 @@ class VforwaterLoaderProcessor(BaseProcessor):
         return mimetype, outputs
 
     def __repr__(self):
-        return '<VforwaterLoader> completed!'
+        return '<VforwaterLoaderProcessor> completed!'
