@@ -173,7 +173,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # df.to_csv(in_dir+'dataframe.csv')s
 
         for image in images:
-            if 'tool_vforwater_loader' in image:
+            if 'tbr_vforwater_loader' in image:
                 # os.system(f"docker run --rm -t --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=variogram {image}")
                 os.system(f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=tool_vforwater_loader {image}")
             else:
