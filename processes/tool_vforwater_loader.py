@@ -167,7 +167,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
-        with open(in_dir + '/parameters.json', 'w', encoding='utf-8') as f:
+        with open(in_dir + '/inputs.json', 'w', encoding='utf-8') as f:
             json.dump(input_dict, f, ensure_ascii=False, indent=4)
 
         # df.to_csv(in_dir+'dataframe.csv')s
