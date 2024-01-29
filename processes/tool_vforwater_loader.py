@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 #: Process metadata and description
 PROCESS_METADATA = {
     'version': '0.4.0',
-    'id': 'tool_vforwater_loader',
+    'id': 'vforwater_loader',
     'title': {
         'en': 'Loader for datasets stored in a metacatalog instance.',
         'de': 'Lader für Datensätze, die in einer Metakatalog-Instanz gespeichert sind.'
@@ -130,11 +130,11 @@ class VforwaterLoaderProcessor(BaseProcessor):
         :param processor_def: provider definition
         :returns: pygeoapi.process.VforwaterLoaderProcessor
         """
-
+        print('+++ In VforwaterLoaderProcessor init')
         super().__init__(processor_def, PROCESS_METADATA)
 
     def execute(self, data):
-
+        print('+++ In VforwaterLoaderProcessor execute')
         mimetype = 'application/json'
         path = ''
 
@@ -146,6 +146,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         start_date = data.get('start_date')  # path/name to numpy.ndarray
         end_date = data.get('end_date')  # integer
         reference_area = data.get('reference_area')  # boolean
+        print('+++ In VforwaterLoaderProcessor execute: got all datasets')
 
         # here you could check if required files are given and check format
         if dataset_ids is None or start_date is None or end_date is None:
@@ -161,6 +162,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 }
             }}
 
+        print('+++ In VforwaterLoaderProcessor execute: prepared input: ', input_dict)
         in_dir = '/home/geoapi/in/' + path
         out_dir = '/home/geoapi/out/' + path
 
@@ -171,7 +173,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
             json.dump(input_dict, f, ensure_ascii=False, indent=4)
 
         # df.to_csv(in_dir+'dataframe.csv')s
-
+        print('+++ In VforwaterLoaderProcessor execute: wrote input')
         for image in images:
             if 'tbr_vforwater_loader' in image:
                 # os.system(f"docker run --rm -t --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=variogram {image}")
@@ -179,6 +181,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
             else:
                 print('Error in processes - tool_vforwater_loader.py. Cannot load docker image.')
 
+        print('+++ In VforwaterLoaderProcessor execute: found image')
         res = 'completed'
 
         # tools = list_tools('ghcr', as_dict=True)
