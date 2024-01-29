@@ -167,6 +167,9 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 }
             }}
 
+        # For testing use no inputs but the example of mirko
+        input_dict = PROCESS_METADATA['example']['inputs']
+
         logging.debug(f'Created json input for Mirkos tool: {input_dict}')
         in_dir = '/home/geoapi/in/' + path
         out_dir = '/home/geoapi/out/' + path
@@ -180,15 +183,19 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         logging.debug(f'wrote json to {in_dir}/inputs.json')
 
-        # df.to_csv(in_dir+'dataframe.csv')s
-        for image in images:
-            logging.debug(f'Found image: {image}')
-            if 'tbr_vforwater_loader' in image:
-                # os.system(f"docker run --rm -t --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=variogram {image}")
-                os.system(f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=tool_vforwater_loader {image}")
-            else:
-                print('Error in processes - tool_vforwater_loader.py. Cannot load docker image.')
-                logging.error('Error in processes - tool_vforwater_loader.py. Cannot load docker image.')
+        # for development hardcode the image
+        image = "ghcr.io/vforwater/tbr_vforwater_loader"
+        logging.debug(f'Use image: {image}')
+        os.system(
+            f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=tool_vforwater_loader {image}")
+        # for image in images:
+        #     logging.debug(f'Found image: {image}')
+        #     if 'tbr_vforwater_loader' in image:
+        #         # os.system(f"docker run --rm -t --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=variogram {image}")
+        #         os.system(f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=tool_vforwater_loader {image}")
+        #     else:
+        #         print('Error in processes - tool_vforwater_loader.py. Cannot load docker image.')
+        #         logging.error('Error in processes - tool_vforwater_loader.py. Cannot load docker image.')
 
         res = 'completed'
 
