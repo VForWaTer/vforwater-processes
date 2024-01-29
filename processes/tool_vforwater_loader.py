@@ -130,23 +130,24 @@ class VforwaterLoaderProcessor(BaseProcessor):
         :param processor_def: provider definition
         :returns: pygeoapi.process.VforwaterLoaderProcessor
         """
-        print('+++ In VforwaterLoaderProcessor init')
         super().__init__(processor_def, PROCESS_METADATA)
 
     def execute(self, data):
-        print('+++ In VforwaterLoaderProcessor execute')
+        LOGGER.info("Started execution of vforwater loader")
         mimetype = 'application/json'
         path = ''
 
         # load all images (podman images!)
         images = get_remote_image_list()
+        LOGGER.info(f"Available images are: {images}")
 
         # collect inputs
         dataset_ids = data.get('dataset_ids')  # path/name to numpy.ndarray
         start_date = data.get('start_date')  # path/name to numpy.ndarray
         end_date = data.get('end_date')  # integer
         reference_area = data.get('reference_area')  # boolean
-        print('+++ In VforwaterLoaderProcessor execute: got all datasets')
+        LOGGER.info(f"Got input dataset ids: {dataset_ids},   start date: {start_date},   end date: {end_date},   "
+                    f"reference area: {reference_area}")
 
         # here you could check if required files are given and check format
         if dataset_ids is None or start_date is None or end_date is None:
@@ -162,26 +163,29 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 }
             }}
 
-        print('+++ In VforwaterLoaderProcessor execute: prepared input: ', input_dict)
+        LOGGER.info(f'Created json input for Mirkos tool: {input_dict}')
         in_dir = '/home/geoapi/in/' + path
         out_dir = '/home/geoapi/out/' + path
 
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
+            LOGGER.info(f'Created output directory at: {out_dir}')
 
         with open(in_dir + '/inputs.json', 'w', encoding='utf-8') as f:
             json.dump(input_dict, f, ensure_ascii=False, indent=4)
 
+        LOGGER.info(f'wrote json to {in_dir}/inputs.json')
+
         # df.to_csv(in_dir+'dataframe.csv')s
-        print('+++ In VforwaterLoaderProcessor execute: wrote input')
         for image in images:
+            LOGGER.info(f'Found image: {image}')
             if 'tbr_vforwater_loader' in image:
                 # os.system(f"docker run --rm -t --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=variogram {image}")
                 os.system(f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=tool_vforwater_loader {image}")
             else:
                 print('Error in processes - tool_vforwater_loader.py. Cannot load docker image.')
+                LOGGER.error('Error in processes - tool_vforwater_loader.py. Cannot load docker image.')
 
-        print('+++ In VforwaterLoaderProcessor execute: found image')
         res = 'completed'
 
         # tools = list_tools('ghcr', as_dict=True)
@@ -195,6 +199,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
             'dir': out_dir
         }
 
+        LOGGER.info(f'Finished execution of vforwater loader. return {mimetype, outputs}')
         return mimetype, outputs
 
     def __repr__(self):
