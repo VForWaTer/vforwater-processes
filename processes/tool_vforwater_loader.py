@@ -7,7 +7,7 @@ import os
 from toolbox_runner.run import get_remote_image_list
 
 # LOGGER = logging.getLogger(__name__)
-logging.basicConfig(filename='vforwater_loader.log', encoding='utf-8', level=logging.DEBUG)
+# logging.basicConfig(filename='vforwater_loader.log', encoding='utf-8', level=logging.DEBUG)
 
 #: Process metadata and description
 PROCESS_METADATA = {
@@ -134,13 +134,13 @@ class VforwaterLoaderProcessor(BaseProcessor):
         super().__init__(processor_def, PROCESS_METADATA)
 
     def execute(self, data):
-        logging.warning("Started execution of vforwater loader")
+        logging.debug("Started execution of vforwater loader")
         mimetype = 'application/json'
         path = ''
 
         # load all images (podman images!)
         images = get_remote_image_list()
-        logging.info(f"Available images are: {images}")
+        logging.debug(f"Available images are: {images}")
 
         # collect inputs
         dataset_ids = data.get('dataset_ids')  # path/name to numpy.ndarray
@@ -150,7 +150,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         if isinstance(reference_area, str):
             reference_area = json.loads(reference_area)
 
-        logging.warning(f"Got input dataset ids: {dataset_ids},   start date: {start_date},   end date: {end_date},   "
+        logging.debug(f"Got input dataset ids: {dataset_ids},   start date: {start_date},   end date: {end_date},   "
                     f"reference area: {reference_area}")
 
         # here you could check if required files are given and check format
@@ -167,22 +167,22 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 }
             }}
 
-        logging.warning(f'Created json input for Mirkos tool: {input_dict}')
+        logging.debug(f'Created json input for Mirkos tool: {input_dict}')
         in_dir = '/home/geoapi/in/' + path
         out_dir = '/home/geoapi/out/' + path
 
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-            logging.warning(f'Created output directory at: {out_dir}')
+            logging.debug(f'Created output directory at: {out_dir}')
 
         with open(in_dir + '/inputs.json', 'w', encoding='utf-8') as f:
             json.dump(input_dict, f, ensure_ascii=False, indent=4)
 
-        logging.warning(f'wrote json to {in_dir}/inputs.json')
+        logging.debug(f'wrote json to {in_dir}/inputs.json')
 
         # df.to_csv(in_dir+'dataframe.csv')s
         for image in images:
-            logging.warning(f'Found image: {image}')
+            logging.debug(f'Found image: {image}')
             if 'tbr_vforwater_loader' in image:
                 # os.system(f"docker run --rm -t --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=variogram {image}")
                 os.system(f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=tool_vforwater_loader {image}")
@@ -203,7 +203,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
             'dir': out_dir
         }
 
-        logging.warning(f'Finished execution of vforwater loader. return {mimetype, outputs}')
+        logging.debug(f'Finished execution of vforwater loader. return {mimetype, outputs}')
         return mimetype, outputs
 
     def __repr__(self):
