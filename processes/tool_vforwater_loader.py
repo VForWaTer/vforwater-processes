@@ -168,7 +168,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
             }}
 
         # For testing use no inputs but the example of mirko
-        input_dict = PROCESS_METADATA['example']['inputs']
+        input_dict['vforwater_loader']['parameters'] = PROCESS_METADATA['example']['inputs']
+        # input_dict = PROCESS_METADATA['example']['inputs']
 
         logging.debug(f'Created json input for Mirkos tool: {input_dict}')
         in_dir = '/home/geoapi/in/' + path
