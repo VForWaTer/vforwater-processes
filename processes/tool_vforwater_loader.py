@@ -44,12 +44,12 @@ PROCESS_METADATA = {
             'description': 'Array of values observed at the given coordinates. '
                            'e.g.: a numpy.ndarray like array([299, 277, ... ])',
             'schema': {
-                'type': 'array, number',
+                'type': 'number',
                 'format': 'integer',
                 'required': 'true'
             },
             'minOccurs': 1,  # expect the data is needed
-            'maxOccurs': 0,
+            'maxOccurs': 0,  # no limit expects an array
         },
         'reference_area': {
             'title': 'Coordinates',
@@ -60,7 +60,7 @@ PROCESS_METADATA = {
                            'Please make sure, that you only pass one FEATURE. FeatureCollections'
                            'e.g.: a numpy.ndarray like array([[181072, 333611], [181025, 333558], ... ])',
             'schema': {
-                'type': 'array, feature',
+                'type': 'geometry',
                 'format': 'GEOJSON',
                 'required': 'false'
             },
@@ -168,8 +168,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
             }}
 
         # For testing use no inputs but the example of mirko
-        input_dict['vforwater_loader']['parameters'] = PROCESS_METADATA['example']['inputs']
-        # input_dict = PROCESS_METADATA['example']['inputs']
+        input_dict['vforwater_loader']['parameters'] = PROCESS_METADATA['example']['inputs']  # job fails
+        # input_dict = PROCESS_METADATA['example']['inputs']  # job runs through but no result
 
         logging.debug(f'Created json input for Mirkos tool: {input_dict}')
         in_dir = '/home/geoapi/in/' + path
