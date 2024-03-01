@@ -44,7 +44,7 @@ PROCESS_METADATA = {
             'description': 'Values observed at the given coordinates. ',
             'schema': {
                 'type': 'timeseries',
-                'format': 'integer',
+                # 'format': 'integer',  # the tool needs an array of integers
                 'required': 'false'
             },
             'minOccurs': 0,  # > 0 => expect the data is needed
@@ -55,7 +55,7 @@ PROCESS_METADATA = {
             'description': 'Raster values observed at the given coordinates. ',
             'schema': {
                 'type': 'raster',
-                'format': 'integer',
+                # 'format': 'integer',  # the tool needs an array of integers
                 'required': 'false'
             },
             'minOccurs': 0,  # > 0 => expect the data is needed
