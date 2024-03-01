@@ -39,26 +39,34 @@ PROCESS_METADATA = {
         'hreflang': 'en-US'
     }],
     'inputs': {
-        'dataset_ids': {
-            'title': 'List of Dataset IDs',
-            'description': 'Array of values observed at the given coordinates. '
-                           'e.g.: a numpy.ndarray like array([299, 277, ... ])',
+        'timeseries_ids': {
+            'title': 'List of Timeseries',
+            'description': 'Values observed at the given coordinates. ',
             'schema': {
-                'type': 'number',
+                'type': 'timeseries',
                 'format': 'integer',
-                'required': 'true'
+                'required': 'false'
             },
-            'minOccurs': 1,  # expect the data is needed
-            'maxOccurs': 0,  # no limit expects an array
+            'minOccurs': 0,  # > 0 => expect the data is needed
+            'maxOccurs': 0,  # 0 => no limit expects an array
+        },
+        'raster_ids': {
+            'title': 'List of Raster data',
+            'description': 'Raster values observed at the given coordinates. ',
+            'schema': {
+                'type': 'raster',
+                'format': 'integer',
+                'required': 'false'
+            },
+            'minOccurs': 0,  # > 0 => expect the data is needed
+            'maxOccurs': 0,  # 0 => no limit expects an array
         },
         'reference_area': {
             'title': 'Coordinates',
             'description': 'The reference area can be any valid GeoJSON POLYGON geometry. Datasets that contain areal '
                            'information will be clipped to this area. Be aware, that some remote sensing datasets may '
                            'have global coverage. If you omit this parameter, the full dataset will be loaded, if the '
-                           'hosting server allows it.'
-                           'Please make sure, that you only pass one FEATURE. FeatureCollections'
-                           'e.g.: a numpy.ndarray like array([[181072, 333611], [181025, 333558], ... ])',
+                           'hosting server allows it.',
             'schema': {
                 'type': 'geometry',
                 'format': 'GEOJSON',
@@ -143,12 +151,24 @@ class VforwaterLoaderProcessor(BaseProcessor):
         logging.debug(f"Available images are: {images}")
 
         # collect inputs
-        dataset_ids = data.get('dataset_ids')  # path/name to numpy.ndarray
+        timeseries_ids = data.get('timeseries_ids')  # path/name to numpy.ndarray
+        areal_ids = data.get('areal_ids')  # path/name to numpy.ndarray
         start_date = data.get('start_date')  # path/name to numpy.ndarray
         end_date = data.get('end_date')  # integer
         reference_area = data.get('reference_area')  # boolean
         if isinstance(reference_area, str):
             reference_area = json.loads(reference_area)
+
+        dataset_ids = []
+        if len(timeseries_ids) > 0 and len(areal_ids) > 0:
+            dataset_ids = timeseries_ids.extend(areal_ids)
+        elif len(areal_ids) > 0:
+            dataset_ids = areal_ids
+        if len(timeseries_ids) > 0:
+            dataset_ids = timeseries_ids
+        else:
+            # raise ProcessorExecuteError('Cannot process without required datasets')
+            return json.dumps({'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
 
         logging.debug(f"Got input dataset ids: {dataset_ids},   start date: {start_date},   end date: {end_date},   "
                     f"reference area: {reference_area}")
