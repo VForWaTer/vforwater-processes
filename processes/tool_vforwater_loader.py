@@ -58,8 +58,8 @@ PROCESS_METADATA = {
                 # 'format': 'integer',  # the tool needs an array of integers
                 'required': 'false'
             },
-            'minOccurs': 0,  # > 0 => expect the data is needed
-            'maxOccurs': 0,  # 0 => no limit expects an array
+            'minOccurs': 0,  # 0 => data is not required; >0 => data is required
+            'maxOccurs': 0,  # 0 => no limit expects an array -> all except of 1 should expect an array
         },
         'reference_area': {
             'title': 'Coordinates',
@@ -72,7 +72,7 @@ PROCESS_METADATA = {
                 'format': 'GEOJSON',
                 'required': 'false'
             },
-            'minOccurs': 0,  # expect the data is not needed
+            'minOccurs': 0,  # expect the data is not required
             'maxOccurs': 1,
         },
         'start_date': {
@@ -83,7 +83,7 @@ PROCESS_METADATA = {
                 'format': 'string',
                 'required': 'true'
             },
-            'minOccurs': 1,  # expect the data is needed
+            'minOccurs': 1,  # expect the data is required
             'maxOccurs': 1,
         },
         'end_date': {
@@ -94,7 +94,7 @@ PROCESS_METADATA = {
                 'format': 'string',
                 'required': 'true'
             },
-            'minOccurs': 1,  # expect the data is needed
+            'minOccurs': 1,  # expect the data is required
             'maxOccurs': 1,
         },
     },
@@ -152,18 +152,18 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         # collect inputs
         timeseries_ids = data.get('timeseries_ids')  # path/name to numpy.ndarray
-        areal_ids = data.get('areal_ids')  # path/name to numpy.ndarray
+        raster_ids = data.get('raster_ids')  # path/name to numpy.ndarray
         start_date = data.get('start_date')  # path/name to numpy.ndarray
         end_date = data.get('end_date')  # integer
-        reference_area = data.get('reference_area')  # boolean
+        reference_area = data.get('reference_area')
         if isinstance(reference_area, str):
             reference_area = json.loads(reference_area)
 
         dataset_ids = []
-        if len(timeseries_ids) > 0 and len(areal_ids) > 0:
-            dataset_ids = timeseries_ids.extend(areal_ids)
-        elif len(areal_ids) > 0:
-            dataset_ids = areal_ids
+        if len(timeseries_ids) > 0 and len(raster_ids) > 0:
+            dataset_ids = timeseries_ids.extend(raster_ids)
+        elif len(raster_ids) > 0:
+            dataset_ids = raster_ids
         if len(timeseries_ids) > 0:
             dataset_ids = timeseries_ids
         else:
@@ -171,7 +171,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
             return json.dumps({'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
 
         logging.debug(f"Got input dataset ids: {dataset_ids},   start date: {start_date},   end date: {end_date},   "
-                    f"reference area: {reference_area}")
+                      f"reference area: {reference_area}")
 
         # here you could check if required files are given and check format
         if dataset_ids is None or start_date is None or end_date is None:
@@ -187,8 +187,10 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 }
             }}
 
+        logging.debug(f"Input for tool is: {input_dict}.")
+
         # For testing use no inputs but the example of mirko
-        input_dict['vforwater_loader']['parameters'] = PROCESS_METADATA['example']['inputs']  # job fails
+        # input_dict['vforwater_loader']['parameters'] = PROCESS_METADATA['example']['inputs']  # job fails
         # input_dict = PROCESS_METADATA['example']['inputs']  # job runs through but no result
 
         logging.debug(f'Created json input for Mirkos tool: {input_dict}')
