@@ -209,6 +209,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # logging.debug(f'wrote json to {in_dir}/inputs.json')
 
         # use python podman
+        error = 'nothing'
         try:
             secrets = PodmanProcessor.get_secrets()
             image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
@@ -241,6 +242,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         except Exception as e:
             print(f'Error running Podman: {e}')
             logging.debug(f'Error running Podman: {e}')
+            error = e
 
         print("podman run completed!")
 
@@ -269,7 +271,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         outputs = {
             'id': 'res',
             'value': res,
-            'dir': host_path_out
+            'dir': host_path_out,
+            'error:': error
         }
 
         logging.debug(f'Finished execution of vforwater loader. return {mimetype, outputs}')
