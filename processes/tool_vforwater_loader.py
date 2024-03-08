@@ -6,6 +6,8 @@ import os
 # from toolbox_runner import list_tools
 from toolbox_runner.run import get_remote_image_list
 
+from processes.podman_processor import PodmanProcessor
+
 # LOGGER = logging.getLogger(__name__)
 # logging.basicConfig(filename='vforwater_loader.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -194,23 +196,60 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # input_dict = PROCESS_METADATA['example']['inputs']  # job runs through but no result
 
         logging.debug(f'Created json input for Mirkos tool: {input_dict}')
-        in_dir = '/home/geoapi/in/' + path
-        out_dir = '/home/geoapi/out/' + path
+        host_path_in = '/home/geoapi/in/' + path  # was in_dir
+        host_path_out = '/home/geoapi/out/' + path  # was out_dir
 
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-            logging.debug(f'Created output directory at: {out_dir}')
+        # if not os.path.exists(out_dir):
+        #     os.makedirs(out_dir)
+        #     logging.debug(f'Created output directory at: {out_dir}')
+        #
+        # with open(in_dir + '/inputs.json', 'w', encoding='utf-8') as f:
+        #     json.dump(input_dict, f, ensure_ascii=False, indent=4)
+        #
+        # logging.debug(f'wrote json to {in_dir}/inputs.json')
 
-        with open(in_dir + '/inputs.json', 'w', encoding='utf-8') as f:
-            json.dump(input_dict, f, ensure_ascii=False, indent=4)
+        # use python podman
+        try:
+            secrets = PodmanProcessor.get_secrets()
+            image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
+            container_name = 'tool_vforwater_loader'
+            container_in = '/in'
+            container_out = '/out'
+            volumes = {
+                host_path_in: {'bind': container_in, 'mode': 'rw'},
+                host_path_out: {'bind': container_out, 'mode': 'rw'}
+            }
 
-        logging.debug(f'wrote json to {in_dir}/inputs.json')
+            mounts = [{'type': 'bind', 'source': host_path_in, 'target': container_in},
+                      {'type': 'bind', 'source': host_path_out, 'target': container_out}]
+
+            environment = {'METACATALOG_URI':
+                               f'postgresql://{secrets["USER"]}@{secrets["HOST"]}:{secrets["PORT"]}/{secrets["DATABASE"]}'}
+            network_mode = 'host'
+            command = ["python", "/src/run.py"]
+
+            uri = secrets['PODMAN_URI']
+            client = PodmanProcessor.connect(uri)
+
+            # get all containers
+            for container in client.containers.list():
+                print('container list: ', container, container.id, "\n")
+
+            container = PodmanProcessor.pull_run_image(client, image_name, container_name, environment, mounts,
+                                                       network_mode, volumes, command)
+            container.remove()
+        except Exception as e:
+            print(f'Error running Podman: {e}')
+            logging.debug(f'Error running Podman: {e}')
+
+        print("podman run completed!")
+
 
         # for development hardcode the image
-        image = "ghcr.io/vforwater/tbr_vforwater_loader"
-        logging.debug(f'Use image: {image}')
-        os.system(
-            f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=tool_vforwater_loader {image}")
+        # image = "ghcr.io/vforwater/tbr_vforwater_loader"
+        # logging.debug(f'Use image: {image}')
+        # os.system(
+        #     f"podman run -t --rm -it --network=host -v {in_dir}:/in -v {out_dir}:/out -e TOOL_RUN=tool_vforwater_loader {image}")
         # for image in images:
         #     logging.debug(f'Found image: {image}')
         #     if 'tbr_vforwater_loader' in image:
@@ -230,7 +269,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         outputs = {
             'id': 'res',
             'value': res,
-            'dir': out_dir
+            'dir': host_path_out
         }
 
         logging.debug(f'Finished execution of vforwater loader. return {mimetype, outputs}')
