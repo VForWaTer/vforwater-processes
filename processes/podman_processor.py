@@ -60,6 +60,9 @@ class PodmanProcessor():
         return container
 
     def get_secrets(file_name="secret.txt"):
+        import os, logging
+        logging.info(f'trying to find secrets in folder: {os.getcwd()}')
+
         secrets = {}
         with open(file_name, 'r') as f:
             lines = f.readlines()
