@@ -179,7 +179,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 dataset_ids = timeseries_ids.extend(raster_ids)
             elif len(raster_ids) > 0:
                 dataset_ids = raster_ids
-            if len(timeseries_ids) > 0:
+            elif len(timeseries_ids) > 0:
                 dataset_ids = timeseries_ids
             else:
                 logging.info('The input data is not complete.')
