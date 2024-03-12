@@ -148,7 +148,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         mimetype = 'application/json'
         path = ''
 
-        # load all images (podman images!)
+        # load all images (podman images!)   Not used yet. Maybe for a latter implementation of tools
         images = get_remote_image_list()
         logging.info(f"Available images are: {images}")
 
@@ -162,28 +162,37 @@ class VforwaterLoaderProcessor(BaseProcessor):
             reference_area = data.get('reference_area', [])
         except Exception as e:
             logging.debug(f"Problem with data.get(): {e}")
+            logging.debug(f"timeseries_ids worked: {timeseries_ids}")
+            logging.debug(f"raster_ids worked: {raster_ids}")
+            logging.debug(f"start_date worked: {start_date}")
+            logging.debug(f"end_date worked: {end_date}")
+            logging.debug(f"reference_area worked: {reference_area} => data.get() seems to work!")
 
         logging.info('Data is loaded')
 
-        if isinstance(reference_area, str):
-            reference_area = json.loads(reference_area)
+        try:
+            if isinstance(reference_area, str):
+                reference_area = json.loads(reference_area)
 
-        dataset_ids = []
-        if len(timeseries_ids) > 0 and len(raster_ids) > 0:
-            dataset_ids = timeseries_ids.extend(raster_ids)
-        elif len(raster_ids) > 0:
-            dataset_ids = raster_ids
-        if len(timeseries_ids) > 0:
-            dataset_ids = timeseries_ids
-        else:
-            # raise ProcessorExecuteError('Cannot process without required datasets')
-            return json.dumps({'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
+            dataset_ids = []
+            if len(timeseries_ids) > 0 and len(raster_ids) > 0:
+                dataset_ids = timeseries_ids.extend(raster_ids)
+            elif len(raster_ids) > 0:
+                dataset_ids = raster_ids
+            if len(timeseries_ids) > 0:
+                dataset_ids = timeseries_ids
+            else:
+                # raise ProcessorExecuteError('Cannot process without required datasets')
+                return json.dumps({'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
+        except Exception as e:
+            logging.debug(f"Problem while concatenate data: {e}")
 
         logging.info(f"Got input dataset ids: {dataset_ids},   start date: {start_date},   end date: {end_date},   "
                      f"reference area: {reference_area}")
 
         # here you could check if required files are given and check format
         if dataset_ids is None or start_date is None or end_date is None:
+            logging.error('Cannot process without required datasets')
             raise ProcessorExecuteError('Cannot process without required datasets')
 
         input_dict = {
@@ -202,7 +211,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # input_dict['vforwater_loader']['parameters'] = PROCESS_METADATA['example']['inputs']  # job fails
         # input_dict = PROCESS_METADATA['example']['inputs']  # job runs through but no result
 
-        logging.info(f'Created json input for Mirkos tool: {input_dict}')
+        logging.info(f'Created json input for tool: {input_dict}')
+
         host_path_in = '/home/geoapi/in/' + path  # was in_dir
         host_path_out = '/home/geoapi/out/' + path  # was out_dir
 
@@ -248,11 +258,11 @@ class VforwaterLoaderProcessor(BaseProcessor):
             container.remove()
         except Exception as e:
             print(f'Error running Podman: {e}')
-            logging.debug(f'Error running Podman: {e}')
+            logging.error(f'Error running Podman: {e}')
             error = e
 
         print("podman run completed!")
-
+        logging.info("Podman run completed!")
 
         # for development hardcode the image
         # image = "ghcr.io/vforwater/tbr_vforwater_loader"
@@ -282,7 +292,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
             'error:': error
         }
 
-        logging.debug(f'Finished execution of vforwater loader. return {mimetype, outputs}')
+        logging.info(f'Finished execution of vforwater loader. return {mimetype, outputs}')
         return mimetype, outputs
 
     def __repr__(self):
