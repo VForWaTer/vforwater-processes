@@ -144,20 +144,27 @@ class VforwaterLoaderProcessor(BaseProcessor):
         super().__init__(processor_def, PROCESS_METADATA)
 
     def execute(self, data):
-        logging.debug("Started execution of vforwater loader")
+        logging.info("______________________________________________________________________________________________")
+        logging.info("Started execution of vforwater loader")
         mimetype = 'application/json'
         path = ''
 
         # load all images (podman images!)
         images = get_remote_image_list()
-        logging.debug(f"Available images are: {images}")
+        logging.info(f"Available images are: {images}")
 
         # collect inputs
-        timeseries_ids = data.get('timeseries_ids')  # path/name to numpy.ndarray
-        raster_ids = data.get('raster_ids')  # path/name to numpy.ndarray
-        start_date = data.get('start_date')  # path/name to numpy.ndarray
-        end_date = data.get('end_date')  # integer
-        reference_area = data.get('reference_area')
+        try:
+            timeseries_ids = data.get('timeseries_ids')  # path/name to numpy.ndarray
+            raster_ids = data.get('raster_ids')  # path/name to numpy.ndarray
+            start_date = data.get('start_date')  # path/name to numpy.ndarray
+            end_date = data.get('end_date')  # integer
+            reference_area = data.get('reference_area')
+        except Exception as e:
+            logging.debug(f"Problem with data.get(): {e}")
+
+        logging.info('Data is loaded'
+                     '')
         if isinstance(reference_area, str):
             reference_area = json.loads(reference_area)
 
@@ -172,8 +179,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
             # raise ProcessorExecuteError('Cannot process without required datasets')
             return json.dumps({'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
 
-        logging.debug(f"Got input dataset ids: {dataset_ids},   start date: {start_date},   end date: {end_date},   "
-                      f"reference area: {reference_area}")
+        logging.info(f"Got input dataset ids: {dataset_ids},   start date: {start_date},   end date: {end_date},   "
+                     f"reference area: {reference_area}")
 
         # here you could check if required files are given and check format
         if dataset_ids is None or start_date is None or end_date is None:
@@ -189,13 +196,13 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 }
             }}
 
-        logging.debug(f"Input for tool is: {input_dict}.")
+        logging.info(f"Input for tool is: {input_dict}.")
 
         # For testing use no inputs but the example of mirko
         # input_dict['vforwater_loader']['parameters'] = PROCESS_METADATA['example']['inputs']  # job fails
         # input_dict = PROCESS_METADATA['example']['inputs']  # job runs through but no result
 
-        logging.debug(f'Created json input for Mirkos tool: {input_dict}')
+        logging.info(f'Created json input for Mirkos tool: {input_dict}')
         host_path_in = '/home/geoapi/in/' + path  # was in_dir
         host_path_out = '/home/geoapi/out/' + path  # was out_dir
 
