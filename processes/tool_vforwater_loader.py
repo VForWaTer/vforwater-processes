@@ -144,8 +144,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         super().__init__(processor_def, PROCESS_METADATA)
 
     def execute(self, data):
-        logging.info("______________________________________________________________________________________________")
-        logging.info("Started execution of vforwater loader")
+        logging.info("___________________________ Started execution of vforwater loader ___________________________")
         mimetype = 'application/json'
         path = ''
 
@@ -155,16 +154,17 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         # collect inputs
         try:
-            timeseries_ids = data.get('timeseries_ids')  # path/name to numpy.ndarray
-            raster_ids = data.get('raster_ids')  # path/name to numpy.ndarray
-            start_date = data.get('start_date')  # path/name to numpy.ndarray
-            end_date = data.get('end_date')  # integer
-            reference_area = data.get('reference_area')
+            # TODO: improve check of inputs
+            timeseries_ids = data.get('timeseries_ids', [])  # path/name to numpy.ndarray
+            raster_ids = data.get('raster_ids', [])  # path/name to numpy.ndarray
+            start_date = data.get('start_date', '')  # path/name to numpy.ndarray
+            end_date = data.get('end_date', '')  # integer
+            reference_area = data.get('reference_area', [])
         except Exception as e:
             logging.debug(f"Problem with data.get(): {e}")
 
-        logging.info('Data is loaded'
-                     '')
+        logging.info('Data is loaded')
+
         if isinstance(reference_area, str):
             reference_area = json.loads(reference_area)
 
