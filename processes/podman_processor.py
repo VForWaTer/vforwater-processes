@@ -58,3 +58,12 @@ class PodmanProcessor():
         #     container.stop()
 
         return container
+
+    def get_secrets(file_name="secret.txt"):
+        secrets = {}
+        with open(file_name, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                key, value = line.strip().split('=')
+                secrets[key] = value
+        return secrets
