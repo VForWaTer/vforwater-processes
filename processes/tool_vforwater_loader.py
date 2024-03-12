@@ -182,6 +182,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
             if len(timeseries_ids) > 0:
                 dataset_ids = timeseries_ids
             else:
+                logging.info('The input data is not complete.')
                 # raise ProcessorExecuteError('Cannot process without required datasets')
                 return json.dumps({'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
         except Exception as e:
