@@ -232,8 +232,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         logging.info(f'Created json input for tool: {input_dict}')
 
         secrets = PodmanProcessor.get_secrets()
-        host_path_in = f'{secrets.GEOAPI_PATH}/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
-        host_path_out = f'{secrets.GEOAPI_PATH}/out/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
+        host_path_in = f'{secrets["GEOAPI_PATH"]}/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
+        host_path_out = f'{secrets["GEOAPI_PATH"]}/out/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
         # host_path_in = f'/home/geoapi/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
         # host_path_out = f'/home/geoapi/out/{user}/{path}'  # was out_dir
 
@@ -262,8 +262,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 host_path_out: {'bind': container_out, 'mode': 'rw'}
             }
             logging.info(f'use volumes: {volumes}')
-            server_path_in = f'{secrets.DATA_PATH}/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
-            server_path_out = f'{secrets.DATA_PATH}/out/{user}/{path}'  # was out_dir
+            server_path_in = f'{secrets["DATA_PATH"]}/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
+            server_path_out = f'{secrets["DATA_PATH"]}/out/{user}/{path}'  # was out_dir
 
             mounts = [{'type': 'bind', 'source': server_path_in, 'target': container_in},
                       {'type': 'bind', 'source': server_path_out, 'target': container_out}]  # mal entfernen in pull run
