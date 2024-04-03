@@ -265,9 +265,11 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 host_path_in: {'bind': container_in, 'mode': 'rw'},
                 host_path_out: {'bind': container_out, 'mode': 'rw'}
             }
+            logging.info(f'use volumes: {volumes}')
 
             mounts = [{'type': 'bind', 'source': host_path_in, 'target': container_in},
                       {'type': 'bind', 'source': host_path_out, 'target': container_out}]
+            logging.info(f'use mounts: {mounts}')
 
             environment = {'METACATALOG_URI':
                                f'postgresql://{secrets["USER"]}@{secrets["HOST"]}:{secrets["PORT"]}/{secrets["DATABASE"]}'}
@@ -275,14 +277,18 @@ class VforwaterLoaderProcessor(BaseProcessor):
             command = ["python", "/src/run.py"]
 
             uri = secrets['PODMAN_URI']
+            logging.info('_____ all prepared. Next use PodmanProcessor.connect _____')
             client = PodmanProcessor.connect(uri)
+            logging.info(f'use client: {client}')
 
             # get all containers
             for container in client.containers.list():
                 print('container list: ', container, container.id, "\n")
+                logging.info(f'container list: {container, container.id} \n')
 
             container = PodmanProcessor.pull_run_image(client, image_name, container_name, environment, mounts,
                                                        network_mode, volumes, command)
+            logging.info(f'use container: {container}')
             container.remove()
         except Exception as e:
             print(f'Error running Podman: {e}')
