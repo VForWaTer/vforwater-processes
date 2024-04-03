@@ -181,20 +181,12 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # logging.info(f"Available images are: {images}")
 
         # collect inputs
-        # try:
             # TODO: improve check of inputs
         timeseries_ids = data.get('timeseries_ids', [])  # path/name to numpy.ndarray
         raster_ids = data.get('raster_ids', [])  # path/name to numpy.ndarray
         start_date = data.get('start_date', '')  # path/name to numpy.ndarray
         end_date = data.get('end_date', '')  # integer
         reference_area = data.get('reference_area', [])
-        # except Exception as e:
-        #     logging.debug(f"Problem with data.get(): {e}")
-        #     logging.debug(f"timeseries_ids worked: {timeseries_ids}")
-        #     logging.debug(f"raster_ids worked: {raster_ids}")
-        #     logging.debug(f"start_date worked: {start_date}")
-        #     logging.debug(f"end_date worked: {end_date}")
-        #     logging.debug(f"reference_area worked: {reference_area} => data.get() seems to work!")
 
         user = data.get('user', "NO_USER")
 
@@ -209,18 +201,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
             if len(dataset_ids) == 0:
                 logging.info('The input data is not complete.')
                 # raise ProcessorExecuteError('Cannot process without required datasets')
-                return json.dumps(
-                    {'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
-            # if len(timeseries_ids) > 0 and len(raster_ids) > 0:
-            #     dataset_ids = timeseries_ids.extend(raster_ids)
-            # elif len(raster_ids) > 0:
-            #     dataset_ids = raster_ids
-            # elif len(timeseries_ids) > 0:
-            #     dataset_ids = timeseries_ids
-            # else:
-            #     logging.info('The input data is not complete.')
-            #     # raise ProcessorExecuteError('Cannot process without required datasets')
-            #     return json.dumps({'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
+                return json.dumps({'warning': 'Running this tool makes no sense without timeseries or areal dataset.'})
         except Exception as e:
             logging.debug(f"Problem while concatenate data: {e}")
 
@@ -252,6 +233,10 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         host_path_in = f'/home/geoapi/in/{user}/{path}'  # was in_dir
         host_path_out = f'/home/geoapi/out/{user}/{path}'  # was out_dir
+
+        if not os.path.exists(host_path_in):
+            os.makedirs(host_path_in)
+            logging.debug(f'Created input directory at: {host_path_in}')
 
         if not os.path.exists(host_path_out):
             os.makedirs(host_path_out)
