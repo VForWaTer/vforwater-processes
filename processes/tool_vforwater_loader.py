@@ -231,8 +231,11 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         logging.info(f'Created json input for tool: {input_dict}')
 
-        host_path_in = f'/home/geoapi/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
-        host_path_out = f'/home/geoapi/out/{user}/{path}'  # was out_dir
+        secrets = PodmanProcessor.get_secrets()
+        host_path_in = f'{secrets.GEOAPI_PATH}/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
+        host_path_out = f'{secrets.GEOAPI_PATH}/out/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
+        # host_path_in = f'/home/geoapi/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
+        # host_path_out = f'/home/geoapi/out/{user}/{path}'  # was out_dir
 
         if not os.path.exists(host_path_in):
             os.makedirs(host_path_in)
@@ -250,7 +253,6 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # use python podman
         error = 'nothing'
         try:
-            secrets = PodmanProcessor.get_secrets()
             image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
             container_name = 'tool_vforwater_loader'
             container_in = '/in'
@@ -260,11 +262,11 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 host_path_out: {'bind': container_out, 'mode': 'rw'}
             }
             logging.info(f'use volumes: {volumes}')
-            host_path_in = f'/data/geoapi/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
-            host_path_out = f'/data/geoapi/out/{user}/{path}'  # was out_dir
+            server_path_in = f'{secrets.DATA_PATH}/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
+            server_path_out = f'{secrets.DATA_PATH}/out/{user}/{path}'  # was out_dir
 
-            mounts = [{'type': 'bind', 'source': host_path_in, 'target': container_in},
-                      {'type': 'bind', 'source': host_path_out, 'target': container_out}]  # mal entfernen in pull run
+            mounts = [{'type': 'bind', 'source': server_path_in, 'target': container_in},
+                      {'type': 'bind', 'source': server_path_out, 'target': container_out}]  # mal entfernen in pull run
             logging.info(f'use mounts: {mounts}')
 
             environment = {'METACATALOG_URI':
