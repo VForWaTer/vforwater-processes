@@ -175,8 +175,9 @@ class VforwaterLoaderProcessor(BaseProcessor):
         path = ''
 
         # load all images (podman images!)   Not used yet. Maybe for a latter implementation of tools
-        images = get_remote_image_list()
-        logging.info(f"Available images are: {images}")
+        # might still use docker. Fix geoprocessapi
+        # images = get_remote_image_list()
+        # logging.info(f"Available images are: {images}")
 
         # collect inputs
         try:
