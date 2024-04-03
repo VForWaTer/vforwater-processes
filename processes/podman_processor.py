@@ -40,18 +40,21 @@ class PodmanProcessor():
 
         print(f"Running Podman container: {container_name}")
         logging.info(f"Running Podman container: {container_name}")
-        container = client.containers.run(
-            image=image_name,
-            detach=True,
-            name=container_name,
-            environment=environment,
-            mounts=mounts,
-            network_mode=network_mode,
-            # volumes=volumes,
-            command=command,
-            remove=False
-        )
-        logging.info(f"Container to use: {container}")
+        try:
+            container = client.containers.run(
+                image=image_name,
+                detach=True,
+                name=container_name,
+                environment=environment,
+                mounts=mounts,
+                network_mode=network_mode,
+                # volumes=volumes,
+                command=command,
+                remove=False
+            )
+            logging.info(f"Container to use: {container}")
+        except Exception as e:
+            logging.info(f"Cannot run client.container. Error: {e}")
 
         # Start the container
         container.start()
