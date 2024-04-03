@@ -284,7 +284,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
             # get all containers
             for container in client.containers.list():
                 print('container list: ', container, container.id, "\n")
-                logging.info(f'container list: {container, container.id} \n')
+                logging.info(f'container list: {container, container.id}')
 
             container = PodmanProcessor.pull_run_image(client, image_name, container_name, environment, mounts,
                                                        network_mode, volumes, command)

@@ -1,3 +1,4 @@
+import logging
 from podman import PodmanClient
 
 class PodmanProcessor():
@@ -5,32 +6,40 @@ class PodmanProcessor():
     def connect(uri='unix:///run/podman/podman.sock'):
         # Connect to Podman
         client = PodmanClient(base_url=uri)
-        
+
         if not client.ping():
             raise Exception("Podman service is not running")
         else:
             print("Podman service is running")
+            logging.info("Podman service is running")
             version = client.version()
             print("Release: ", version["Version"])
+            logging.info("Release: ", version["Version"])
             print("Compatible API: ", version["ApiVersion"])
+            logging.info("Compatible API: ", version["ApiVersion"])
             print("Podman API: ", version["Components"][0]["Details"]["APIVersion"], "\n")
+            logging.info("Podman API: ", version["Components"][0]["Details"]["APIVersion"])
 
         return client
 
     def pull_run_image(client, image_name, container_name, environment=None, mounts=None, network_mode=None, volumes=None, command=None):
-       
+
         # Pull the Docker image
         print("image: ", client.images.list(filters={"reference": image_name}))
+        logging.info("image: ", client.images.list(filters={"reference": image_name}))
         if not client.images.list(filters={"reference": image_name}):
             print(f"Pulling Podman image: {image_name}")
+            logging.info(f"Pulling Podman image: {image_name}")
             client.images.pull(image_name)
 
         existing_container = client.containers.list(filters={"name": container_name})
         if existing_container:
             print(f"Container '{container_name}' already exists. Removing...")
+            logging.info(f"Container '{container_name}' already exists. Removing...")
             existing_container[0].remove(force=True)
 
         print(f"Running Podman container: {container_name}")
+        logging.info(f"Running Podman container: {container_name}")
         container = client.containers.run(
             image=image_name,
             detach=True,
@@ -49,20 +58,24 @@ class PodmanProcessor():
         # status of the container after starting
         container.reload()
         print("container starting status :", container.status)
+        logging.info("container starting status :", container.status)
 
-        # exit status code 
-        exit_status = container.wait()  
+        # exit status code
+        exit_status = container.wait()
         print("exit_status :", exit_status)
+        logging.info("exit_status :", exit_status)
 
-        # status of the container 
+        # status of the container
         container.reload()
         print("container  exiting status :", container.status)
-
+        logging.info("container  exiting status :", container.status)
 
         # Print container logs
         print(f"Container '{container.name}' logs:")
+        logging.info(f" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Container '{container.name}' logs: _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
         for line in container.logs(stream=True):
             print(line.strip().decode('utf-8'))
+            logging.info(line.strip().decode('utf-8'))
 
         return {
             "container" : container,
