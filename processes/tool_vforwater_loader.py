@@ -29,6 +29,7 @@
 
 import logging
 import json
+import os
 
 from pygeoapi.process.base import BaseProcessor, ProcessorExecuteError
 
@@ -172,7 +173,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
     def execute(self, data):
         logging.info("___________________________ Started execution of vforwater loader ___________________________")
         mimetype = 'application/json'
-        path = ''
+        path = f'vfw_loader_{os.urandom(5).hex()}'
 
         # load all images (podman images!)   Not used yet. Maybe for a latter implementation of tools
         # might still use docker. Fix geoprocessapi
@@ -180,20 +181,22 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # logging.info(f"Available images are: {images}")
 
         # collect inputs
-        try:
+        # try:
             # TODO: improve check of inputs
-            timeseries_ids = data.get('timeseries_ids', [])  # path/name to numpy.ndarray
-            raster_ids = data.get('raster_ids', [])  # path/name to numpy.ndarray
-            start_date = data.get('start_date', '')  # path/name to numpy.ndarray
-            end_date = data.get('end_date', '')  # integer
-            reference_area = data.get('reference_area', [])
-        except Exception as e:
-            logging.debug(f"Problem with data.get(): {e}")
-            logging.debug(f"timeseries_ids worked: {timeseries_ids}")
-            logging.debug(f"raster_ids worked: {raster_ids}")
-            logging.debug(f"start_date worked: {start_date}")
-            logging.debug(f"end_date worked: {end_date}")
-            logging.debug(f"reference_area worked: {reference_area} => data.get() seems to work!")
+        timeseries_ids = data.get('timeseries_ids', [])  # path/name to numpy.ndarray
+        raster_ids = data.get('raster_ids', [])  # path/name to numpy.ndarray
+        start_date = data.get('start_date', '')  # path/name to numpy.ndarray
+        end_date = data.get('end_date', '')  # integer
+        reference_area = data.get('reference_area', [])
+        # except Exception as e:
+        #     logging.debug(f"Problem with data.get(): {e}")
+        #     logging.debug(f"timeseries_ids worked: {timeseries_ids}")
+        #     logging.debug(f"raster_ids worked: {raster_ids}")
+        #     logging.debug(f"start_date worked: {start_date}")
+        #     logging.debug(f"end_date worked: {end_date}")
+        #     logging.debug(f"reference_area worked: {reference_area} => data.get() seems to work!")
+
+        user = data.get('user', "NO_USER")
 
         logging.info('Data is loaded')
 
@@ -201,17 +204,23 @@ class VforwaterLoaderProcessor(BaseProcessor):
             if isinstance(reference_area, str):
                 reference_area = json.loads(reference_area)
 
-            dataset_ids = []
-            if len(timeseries_ids) > 0 and len(raster_ids) > 0:
-                dataset_ids = timeseries_ids.extend(raster_ids)
-            elif len(raster_ids) > 0:
-                dataset_ids = raster_ids
-            elif len(timeseries_ids) > 0:
-                dataset_ids = timeseries_ids
-            else:
+            dataset_ids = timeseries_ids
+            dataset_ids.extend(raster_ids)
+            if len(dataset_ids) == 0:
                 logging.info('The input data is not complete.')
                 # raise ProcessorExecuteError('Cannot process without required datasets')
-                return json.dumps({'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
+                return json.dumps(
+                    {'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
+            # if len(timeseries_ids) > 0 and len(raster_ids) > 0:
+            #     dataset_ids = timeseries_ids.extend(raster_ids)
+            # elif len(raster_ids) > 0:
+            #     dataset_ids = raster_ids
+            # elif len(timeseries_ids) > 0:
+            #     dataset_ids = timeseries_ids
+            # else:
+            #     logging.info('The input data is not complete.')
+            #     # raise ProcessorExecuteError('Cannot process without required datasets')
+            #     return json.dumps({'warning': 'Running this tool makes no sense without a timeseries or areal dataset.'})
         except Exception as e:
             logging.debug(f"Problem while concatenate data: {e}")
 
@@ -241,17 +250,17 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         logging.info(f'Created json input for tool: {input_dict}')
 
-        host_path_in = '/home/geoapi/in/' + path  # was in_dir
-        host_path_out = '/home/geoapi/out/' + path  # was out_dir
+        host_path_in = f'/home/geoapi/in/{user}/{path}'  # was in_dir
+        host_path_out = f'/home/geoapi/out/{user}/{path}'  # was out_dir
 
-        # if not os.path.exists(out_dir):
-        #     os.makedirs(out_dir)
-        #     logging.debug(f'Created output directory at: {out_dir}')
-        #
-        # with open(in_dir + '/inputs.json', 'w', encoding='utf-8') as f:
-        #     json.dump(input_dict, f, ensure_ascii=False, indent=4)
-        #
-        # logging.debug(f'wrote json to {in_dir}/inputs.json')
+        if not os.path.exists(host_path_out):
+            os.makedirs(host_path_out)
+            logging.debug(f'Created output directory at: {host_path_out}')
+
+        with open(f'{host_path_in}/inputs.json', 'w', encoding='utf-8') as f:
+            json.dump(input_dict, f, ensure_ascii=False, indent=4)
+
+        logging.debug(f'wrote json to {host_path_in}/inputs.json')
 
         # use python podman
         error = 'nothing'
