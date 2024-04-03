@@ -231,7 +231,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         logging.info(f'Created json input for tool: {input_dict}')
 
-        host_path_in = f'/home/geoapi/in/{user}/{path}'  # was in_dir
+        host_path_in = f'/home/geoapi/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
         host_path_out = f'/home/geoapi/out/{user}/{path}'  # was out_dir
 
         if not os.path.exists(host_path_in):
@@ -255,14 +255,16 @@ class VforwaterLoaderProcessor(BaseProcessor):
             container_name = 'tool_vforwater_loader'
             container_in = '/in'
             container_out = '/out'
-            volumes = {
+            volumes = {  # sollte funktionieren
                 host_path_in: {'bind': container_in, 'mode': 'rw'},
                 host_path_out: {'bind': container_out, 'mode': 'rw'}
             }
             logging.info(f'use volumes: {volumes}')
+            host_path_in = f'/data/geoapi/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
+            host_path_out = f'/data/geoapi/out/{user}/{path}'  # was out_dir
 
             mounts = [{'type': 'bind', 'source': host_path_in, 'target': container_in},
-                      {'type': 'bind', 'source': host_path_out, 'target': container_out}]
+                      {'type': 'bind', 'source': host_path_out, 'target': container_out}]  # mal entfernen in pull run
             logging.info(f'use mounts: {mounts}')
 
             environment = {'METACATALOG_URI':
