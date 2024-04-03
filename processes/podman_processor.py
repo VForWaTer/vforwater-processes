@@ -51,12 +51,15 @@ class PodmanProcessor():
             command=command,
             remove=False
         )
+        logging.info(f"Container to use: {container}")
 
         # Start the container
         container.start()
+        logging.info("Container started")
 
         # status of the container after starting
         container.reload()
+        logging.info("Container reloaded")
         print("container starting status :", container.status)
         logging.info("container starting status :", container.status)
 
