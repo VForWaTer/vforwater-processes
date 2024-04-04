@@ -277,14 +277,17 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
             uri = secrets['PODMAN_URI']
             logging.info('_____ all prepared. Next use PodmanProcessor.connect _____')
-            client2 = PodmanProcessorObj(uri)
-            logging.info(f' + + + + use client as class: {client2}')
-
             client = PodmanProcessor.connect(uri)
+
             logging.info(f'use client: {client}')
 
-            for container in client2.containers.list():
-                logging.info(f' + + + + container list: {container, container.id}')
+            try:
+                client2 = PodmanProcessorObj(uri)
+                logging.info(f' + + + + use client as class: {client2}')
+                for container in client2.containers.list():
+                    logging.info(f' + + + + container list: {container, container.id}')
+            except Exception as e:
+                logging.info(f' + + + + Podman Obj did not work: {e}')
 
             # get all containers
             for container in client.containers.list():
@@ -344,7 +347,7 @@ class PodmanProcessorObj(PodmanClient):
         PodmanClient.__init__(self, uri)
         self.client = self.connect(uri)
 
-    def connect(uri='unix:///run/podman/podman.sock'):
+    def connect(self, uri='unix:///run/podman/podman.sock'):
         # Connect to Podman
         client = PodmanClient(base_url=uri)
 
@@ -363,7 +366,7 @@ class PodmanProcessorObj(PodmanClient):
 
         return client
 
-    def pull_run_image(client, image_name, container_name, environment=None, mounts=None, network_mode=None, volumes=None, command=None):
+    def pull_run_image(self, client, image_name, container_name, environment=None, mounts=None, network_mode=None, volumes=None, command=None):
 
         # Pull the Docker image
         print("image: ", client.images.list(filters={"reference": image_name}))
