@@ -294,8 +294,10 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 print('container list: ', container, container.id, "\n")
                 logging.info(f'container list: {container, container.id}')
 
-            container = PodmanProcessor.pull_run_image(client, image_name, container_name, environment, mounts,
-                                                       network_mode, volumes, command)
+            container = PodmanProcessor.pull_run_image(client=client, image_name=image_name,
+                                                       container_name=container_name, environment=environment,
+                                                       mounts=mounts, network_mode=network_mode, volumes=volumes,
+                                                       command=command)
             logging.info(f'use container: {container}')
             container.remove()
         except Exception as e:
@@ -342,9 +344,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
 
 class PodmanProcessorObj(PodmanClient):
-
     def __init__(self, uri):
-        PodmanClient.__init__(self, uri)
+        PodmanClient.__init__(self)
         self.client = self.connect(uri)
 
     def connect(self, uri='unix:///run/podman/podman.sock'):
