@@ -291,7 +291,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
                                                        mounts=mounts, network_mode=network_mode, volumes=volumes,
                                                        command=command)
             logging.info(f'use container: {container}')
-            container.remove()
+            container["container"].remove()
         except Exception as e:
             print(f'Error running Podman: {e}')
             logging.error(f'Error running Podman: {e}')
