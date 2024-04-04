@@ -255,7 +255,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         error = 'nothing'
         try:
             image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
-            container_name = 'tool_vforwater_loader'
+            container_name = f'tool_vforwater_loader_{os.urandom(5).hex()}'
             container_in = '/in'
             container_out = '/out'
             volumes = {  # sollte funktionieren
@@ -280,14 +280,6 @@ class VforwaterLoaderProcessor(BaseProcessor):
             client = PodmanProcessor.connect(uri)
 
             logging.info(f'use client: {client}')
-
-            try:
-                client2 = PodmanProcessorObj(uri)
-                logging.info(f' + + + + use client as class: {client2}')
-                for container in client2.containers.list():
-                    logging.info(f' + + + + container list: {container, container.id}')
-            except Exception as e:
-                logging.info(f' + + + + Podman Obj did not work: {e}')
 
             # get all containers
             for container in client.containers.list():
@@ -341,107 +333,3 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
     def __repr__(self):
         return '<VforwaterLoaderProcessor> completed!'
-
-
-class PodmanProcessorObj(PodmanClient):
-    def __init__(self, uri):
-        PodmanClient.__init__(self)
-        self.client = self.connect(uri)
-
-    def connect(self, uri='unix:///run/podman/podman.sock'):
-        # Connect to Podman
-        client = PodmanClient(base_url=uri)
-
-        if not client.ping():
-            raise Exception("Podman service is not running")
-        else:
-            print("Podman service is running")
-            logging.info("Podman service is running")
-            version = client.version()
-            print("Release: ", version["Version"])
-            logging.info("Release: ", version["Version"])
-            print("Compatible API: ", version["ApiVersion"])
-            logging.info("Compatible API: ", version["ApiVersion"])
-            print("Podman API: ", version["Components"][0]["Details"]["APIVersion"], "\n")
-            logging.info("Podman API: ", version["Components"][0]["Details"]["APIVersion"])
-
-        return client
-
-    def pull_run_image(self, client, image_name, container_name, environment=None, mounts=None, network_mode=None, volumes=None, command=None):
-
-        # Pull the Docker image
-        print("image: ", client.images.list(filters={"reference": image_name}))
-        logging.info("image: ", client.images.list(filters={"reference": image_name}))
-        if not client.images.list(filters={"reference": image_name}):
-            print(f"Pulling Podman image: {image_name}")
-            logging.info(f"Pulling Podman image: {image_name}")
-            client.images.pull(image_name)
-
-        existing_container = client.containers.list(filters={"name": container_name})
-        if existing_container:
-            logging.info(f"There are existing containers {existing_container}")
-            logging.info(f"Trying to remove container {existing_container[0]}")
-            print(f"Container '{container_name}' already exists. Removing...")
-            logging.info(f"Container '{container_name}' already exists. Removing...")
-            existing_container[0].stop()
-            existing_container[0].remove(force=True)
-
-        print(f"Running Podman container: {container_name}")
-        logging.info(f"Running Podman container: {container_name}")
-        try:
-            container = client.containers.run(
-                image=image_name,
-                detach=True,
-                name=container_name,
-                environment=environment,
-                mounts=mounts,
-                network_mode=network_mode,
-                # volumes=volumes,
-                command=command,
-                remove=False
-            )
-            logging.info(f"Container to use: {container}")
-        except Exception as e:
-            logging.info(f"Cannot run client.container. Error: {e}")
-
-        # Start the container
-        container.start()
-        logging.info("Container started")
-
-        # status of the container after starting
-        container.reload()
-        logging.info("Container reloaded")
-        print("container starting status :", container.status)
-        logging.info("container starting status :", container.status)
-
-        # exit status code
-        exit_status = container.wait()
-        print("exit_status :", exit_status)
-        logging.info("exit_status :", exit_status)
-
-        # status of the container
-        container.reload()
-        print("container  exiting status :", container.status)
-        logging.info("container  exiting status :", container.status)
-
-        # Print container logs
-        print(f"Container '{container.name}' logs:")
-        logging.info(f" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Container '{container.name}' logs: _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
-        for line in container.logs(stream=True):
-            print(line.strip().decode('utf-8'))
-            logging.info(line.strip().decode('utf-8'))
-
-        return {
-            "container" : container,
-            "container_status": container.status
-        }
-
-    def get_secrets(file_name="processes/secret.txt"):
-
-        secrets = {}
-        with open(file_name, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                key, value = line.strip().split('=')
-                secrets[key] = value
-        return secrets
