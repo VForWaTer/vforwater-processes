@@ -187,15 +187,17 @@ class VforwaterLoaderProcessor(BaseProcessor):
         raster_ids = data.get('raster_ids', [])  # path/name to numpy.ndarray
         start_date = data.get('start_date', '')  # path/name to numpy.ndarray
         end_date = data.get('end_date', '')  # integer
-        reference_area = data.get('reference_area', "")
+        reference_area = data.get('reference_area', {})
 
         user = data.get('user', "NO_USER")
 
         logging.info('Data is loaded')
 
         try:
-            # if isinstance(reference_area, str):
-            reference_area = json.loads(reference_area)
+            if isinstance(reference_area, dict):
+                reference_area = json.dumps(reference_area, indent=4)
+            else:
+                reference_area = json.loads(reference_area)
 
             dataset_ids = timeseries_ids
             dataset_ids.extend(raster_ids)
