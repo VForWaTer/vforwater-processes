@@ -181,21 +181,21 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # images = get_remote_image_list()
         # logging.info(f"Available images are: {images}")
 
-# ________________  prepare input data _________________________
+# ________________ get and prepare input data _________________________
             # TODO: improve check of inputs
         timeseries_ids = data.get('timeseries_ids', [])  # path/name to numpy.ndarray
         raster_ids = data.get('raster_ids', [])  # path/name to numpy.ndarray
         start_date = data.get('start_date', '')  # path/name to numpy.ndarray
         end_date = data.get('end_date', '')  # integer
-        reference_area = data.get('reference_area', [])
+        reference_area = data.get('reference_area', {})
 
         user = data.get('user', "NO_USER")
 
         logging.info('Data is loaded')
 
         try:
-            if isinstance(reference_area, str):
-                reference_area = json.loads(reference_area)
+            # if isinstance(reference_area, str):
+            reference_area = json.loads(reference_area)
 
             dataset_ids = timeseries_ids
             dataset_ids.extend(raster_ids)
