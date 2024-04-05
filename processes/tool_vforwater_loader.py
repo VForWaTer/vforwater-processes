@@ -194,9 +194,9 @@ class VforwaterLoaderProcessor(BaseProcessor):
         logging.info('Data is loaded')
 
         try:
-            if isinstance(reference_area, dict):
-                reference_area = json.dumps(reference_area, indent=4)
-            else:
+            if not isinstance(reference_area, dict):
+            #     reference_area = json.dumps(reference_area, indent=4)
+            # else:
                 reference_area = json.loads(reference_area)
 
             dataset_ids = timeseries_ids
