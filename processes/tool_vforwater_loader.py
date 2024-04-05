@@ -181,8 +181,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # images = get_remote_image_list()
         # logging.info(f"Available images are: {images}")
 
-# ________________ get and prepare input data _________________________
-            # TODO: improve check of inputs
+        # ________________ get and prepare input data _________________________
+        # TODO: improve check of inputs
         timeseries_ids = data.get('timeseries_ids', [])  # path/name to numpy.ndarray
         raster_ids = data.get('raster_ids', [])  # path/name to numpy.ndarray
         start_date = data.get('start_date', '')  # path/name to numpy.ndarray
@@ -254,7 +254,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         logging.debug(f'wrote json to {host_path_in}/inputs.json')
 
-# ________________  prepare data to run container _________________________
+        # ________________  prepare data to run container _________________________
         logging.info('Prepare container data')
         image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
         container_name = f'tool_vforwater_loader_{os.urandom(5).hex()}'
@@ -281,10 +281,9 @@ class VforwaterLoaderProcessor(BaseProcessor):
         network_mode = 'host'
         command = ["python", "/src/run.py"]
 
-# ________________  run container _________________________
+        # ________________  run container _________________________
         # use python podman
         error = 'none'
-        status ='failed'
         try:
             client = PodmanProcessor.connect(secrets['PODMAN_URI'])
             logging.info(f'use client: {client}')
@@ -294,16 +293,22 @@ class VforwaterLoaderProcessor(BaseProcessor):
                                                        mounts=mounts, network_mode=network_mode, volumes=volumes,
                                                        command=command)
             logging.info(f'running container: {container}')
-
-            status = container.status
-            logging.info(f"Podman status before remove is {status}")
-            tool_logs = container.logs
-            # container.remove()
         except Exception as e:
             print(f'Error running Podman: {e}')
             logging.error(f'Error running Podman: {e}')
             error = e
 
+        status = 'failed'
+        tool_logs = 'Found no logs inside of tool'
+        try:  # try to get info about container
+            status = container.status
+            logging.info(f"Podman status before remove is {status}")
+            tool_logs = container.logs
+        except Exception as e:
+            logging.error(f'Error running Podman: {e}')
+            error = f'1: Container Exception: {error} --- 2: Get status Exception {e}'
+
+        # container.remove()
         print("podman run completed!")
         logging.info("Podman run completed!")
 
