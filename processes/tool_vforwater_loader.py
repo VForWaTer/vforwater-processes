@@ -303,7 +303,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         try:  # try to get info about container
             status = container.status
             logging.info(f"Podman status before remove is {status}")
-            tool_logs = container.logs
+            tool_logs = container.logs()
         except Exception as e:
             logging.error(f'Error running Podman: {e}')
             error = f'1: Container Exception: {error} --- 2: Get status Exception {e}'
@@ -332,12 +332,14 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # prof = tools.get('profile')
         # dataset = pd.read_csv(df)
         # res = prof.run(result_path='out/', data=dataset)
+        logging.info(f" - container_status: {type(status), status}")
         logging.info(f" - host_path_out: {type(host_path_out), host_path_out}")
         logging.info(f" - error: {type(error), error}")
         logging.info(f" - tool_logs: {type(tool_logs), tool_logs}")
 
         outputs = {
             # 'id': 'res',
+            'container_status': status,
             'geoapi_status': res,
             'value': res,
             'dir': host_path_out,
