@@ -304,6 +304,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
             status = container.status
             logging.info(f"Podman status before remove is {status}")
             tool_logs = container.logs()
+            tool_logs = tool_logs.decode('utf-8')
         except Exception as e:
             logging.error(f'Error running Podman: {e}')
             error = f'1: Container Exception: {error} --- 2: Get status Exception {e}'
