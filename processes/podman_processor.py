@@ -84,7 +84,8 @@ class PodmanProcessor():
         logging.info(f" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Container '{container.name}' logs: _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
         for line in container.logs(stream=True):
             print(line.strip().decode('utf-8'))
-            logging.info(line.decode('utf-8'))
+            logging.info(f" - - {line.decode('utf-8')} - - ")
+        logging.info(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ fnished logs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
 
         return container
         # return {
