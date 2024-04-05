@@ -189,7 +189,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         end_date = data.get('end_date', '')  # integer
         reference_area = data.get('reference_area', {})
 
-        user = data.get('user', "NO_USER")
+        user = data.get('User-Info', "NO_USER")
 
         logging.info('Data is loaded')
 
