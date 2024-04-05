@@ -197,6 +197,9 @@ class VforwaterLoaderProcessor(BaseProcessor):
             if not isinstance(reference_area, dict):
                 reference_area = json.loads(reference_area)
 
+            if 'geometry' in reference_area and isinstance(reference_area['geometry'], str):
+                reference_area['geometry'] = json.loads(reference_area['geometry'])
+
             dataset_ids = timeseries_ids
             dataset_ids.extend(raster_ids)
             if len(dataset_ids) == 0:
