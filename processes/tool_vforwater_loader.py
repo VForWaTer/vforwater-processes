@@ -187,7 +187,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         raster_ids = data.get('raster_ids', [])  # path/name to numpy.ndarray
         start_date = data.get('start_date', '')  # path/name to numpy.ndarray
         end_date = data.get('end_date', '')  # integer
-        reference_area = data.get('reference_area', {})
+        reference_area = data.get('reference_area', "")
 
         user = data.get('user', "NO_USER")
 
