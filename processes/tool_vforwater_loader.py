@@ -249,10 +249,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
             os.makedirs(host_path_out)
             logging.debug(f'Created output directory at: {host_path_out}')
 
-        with open(f'{host_path_in}/inputs.json', 'w') as f:
-            json.dump(input_dict, f)
-        # with open(f'{host_path_in}/inputs.json', 'w', encoding='utf-8') as f:
-        #     json.dump(input_dict, f, ensure_ascii=False, indent=4)
+        with open(f'{host_path_in}/inputs.json', 'w', encoding='utf-8') as f:
+            json.dump(input_dict, f, ensure_ascii=False, indent=4)
 
         logging.debug(f'wrote json to {host_path_in}/inputs.json')
 

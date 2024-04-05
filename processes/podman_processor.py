@@ -8,7 +8,8 @@ class PodmanProcessor():
         client = PodmanClient(base_url=uri)
 
         if not client.ping():
-            raise Exception("Podman service is not running")
+            logging.error("Podman service is NOT running")
+            raise Exception("Podman service is NOT running")
         else:
             print("Podman service is running")
             logging.info("Podman service is running")
@@ -22,8 +23,9 @@ class PodmanProcessor():
 
         return client
 
-    def pull_run_image(client, image_name, container_name, environment=None, mounts=None, network_mode=None, volumes=None, command=None):
-
+    def pull_run_image(client, image_name, container_name, environment=None, mounts=None, network_mode=None,
+                       volumes=None, command=None):
+        secrets = PodmanProcessor.get_secrets()
         # Pull the Docker image
         print("image: ", client.images.list(filters={"reference": image_name}))
         logging.info("image: ", client.images.list(filters={"reference": image_name}))
@@ -36,6 +38,7 @@ class PodmanProcessor():
         if existing_container:
             print(f"Container '{container_name}' already exists. Removing...")
             logging.info(f"Container '{container_name}' already exists. Removing...")
+            existing_container[0].stop()
             existing_container[0].remove(force=True)
 
         print(f"Running Podman container: {container_name}")
@@ -83,10 +86,11 @@ class PodmanProcessor():
             print(line.strip().decode('utf-8'))
             logging.info(line.strip().decode('utf-8'))
 
-        return {
-            "container" : container,
-            "container_status": container.status
-        }
+        return container
+        # return {
+        #     "container": container,
+        #     "container_status": container.status
+        # }
 
     def get_secrets(file_name="processes/secret.txt"):
 
