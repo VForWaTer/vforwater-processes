@@ -301,6 +301,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         status = 'failed'
         tool_logs = 'Found no logs inside of tool'
         try:  # try to get info about container
+            container.reload()
             status = container.status
             logging.info(f"Podman status before remove is {status}")
             logs_generator = container.logs()
