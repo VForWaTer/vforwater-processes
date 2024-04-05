@@ -281,6 +281,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         network_mode = 'host'
         command = ["python", "/src/run.py"]
 
+# ________________  run container _________________________
         # use python podman
         error = 'none'
         status ='failed'
@@ -296,6 +297,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
             status = container.status
             logging.info(f"Podman status before remove is {status}")
+            tool_logs = container.logs
             # container.remove()
         except Exception as e:
             print(f'Error running Podman: {e}')
@@ -331,7 +333,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
             'geoapi_status': res,
             'value': res,
             'dir': host_path_out,
-            'error:': error
+            'error:': error,
+            'tool_logs': tool_logs
         }
 
         logging.info(f'Finished execution of vforwater loader. return {mimetype, outputs}')
