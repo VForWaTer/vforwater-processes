@@ -332,6 +332,9 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # prof = tools.get('profile')
         # dataset = pd.read_csv(df)
         # res = prof.run(result_path='out/', data=dataset)
+        logging.info(f" - host_path_out: {type(host_path_out), host_path_out}")
+        logging.info(f" - error: {type(error), error}")
+        logging.info(f" - tool_logs: {type(tool_logs), tool_logs}")
 
         outputs = {
             # 'id': 'res',
