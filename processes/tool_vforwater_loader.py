@@ -181,7 +181,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # images = get_remote_image_list()
         # logging.info(f"Available images are: {images}")
 
-        # collect inputs
+# ________________  prepare input data _________________________
             # TODO: improve check of inputs
         timeseries_ids = data.get('timeseries_ids', [])  # path/name to numpy.ndarray
         raster_ids = data.get('raster_ids', [])  # path/name to numpy.ndarray
@@ -251,47 +251,49 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         logging.debug(f'wrote json to {host_path_in}/inputs.json')
 
+# ________________  prepare data to run container _________________________
+        logging.info('Prepare container data')
+        image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
+        container_name = f'tool_vforwater_loader_{os.urandom(5).hex()}'
+
+        container_in = '/in'
+        container_out = '/out'
+
+        server_path_in = f'{secrets["DATA_PATH"]}/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
+        server_path_out = f'{secrets["DATA_PATH"]}/out/{user}/{path}'  # was out_dir
+
+        mounts = [{'type': 'bind', 'source': server_path_in, 'target': container_in},
+                  {'type': 'bind', 'source': server_path_out, 'target': container_out}]  # mal entfernen in pull run
+        logging.info(f'use mounts: {mounts}')
+
+        volumes = {  # sollte funktionieren
+            host_path_in: {'bind': container_in, 'mode': 'rw'},  # container_in = '/in'
+            host_path_out: {'bind': container_out, 'mode': 'rw'}  # container_out = '/out'
+        }
+        logging.info(f'use volumes: {volumes}')
+
+        environment = {
+            'METACATALOG_URI':
+                f'postgresql://{secrets["USER"]}@{secrets["HOST"]}:{secrets["PORT"]}/{secrets["DATABASE"]}'}
+        network_mode = 'host'
+        command = ["python", "/src/run.py"]
+
         # use python podman
-        error = 'nothing'
+        error = 'none'
+        status ='failed'
         try:
-            image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
-            container_name = f'tool_vforwater_loader_{os.urandom(5).hex()}'
-            container_in = '/in'
-            container_out = '/out'
-            volumes = {  # sollte funktionieren
-                host_path_in: {'bind': container_in, 'mode': 'rw'},
-                host_path_out: {'bind': container_out, 'mode': 'rw'}
-            }
-            logging.info(f'use volumes: {volumes}')
-            server_path_in = f'{secrets["DATA_PATH"]}/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
-            server_path_out = f'{secrets["DATA_PATH"]}/out/{user}/{path}'  # was out_dir
-
-            mounts = [{'type': 'bind', 'source': server_path_in, 'target': container_in},
-                      {'type': 'bind', 'source': server_path_out, 'target': container_out}]  # mal entfernen in pull run
-            logging.info(f'use mounts: {mounts}')
-
-            environment = {'METACATALOG_URI':
-                               f'postgresql://{secrets["USER"]}@{secrets["HOST"]}:{secrets["PORT"]}/{secrets["DATABASE"]}'}
-            network_mode = 'host'
-            command = ["python", "/src/run.py"]
-
-            uri = secrets['PODMAN_URI']
-            logging.info('_____ all prepared. Next use PodmanProcessor.connect _____')
-            client = PodmanProcessor.connect(uri)
-
+            client = PodmanProcessor.connect(secrets['PODMAN_URI'])
             logging.info(f'use client: {client}')
-
-            # get all containers
-            for container in client.containers.list():
-                print('container list: ', container, container.id, "\n")
-                logging.info(f'container list: {container, container.id}')
 
             container = PodmanProcessor.pull_run_image(client=client, image_name=image_name,
                                                        container_name=container_name, environment=environment,
                                                        mounts=mounts, network_mode=network_mode, volumes=volumes,
                                                        command=command)
-            logging.info(f'use container: {container}')
-            container["container"].remove()
+            logging.info(f'running container: {container}')
+
+            status = container.status
+            logging.info(f"Podman status before remove is {status}")
+            # container.remove()
         except Exception as e:
             print(f'Error running Podman: {e}')
             logging.error(f'Error running Podman: {e}')
@@ -322,7 +324,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # res = prof.run(result_path='out/', data=dataset)
 
         outputs = {
-            'id': 'res',
+            # 'id': 'res',
+            'geoapi_status': res,
             'value': res,
             'dir': host_path_out,
             'error:': error
