@@ -265,7 +265,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         server_path_in = f'{secrets["DATA_PATH"]}/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
         server_path_out = f'{secrets["DATA_PATH"]}/out/{user}/{path}'  # was out_dir
 
-        mounts = [{'type': 'bind', 'source': server_path_in, 'target': container_in},
+        mounts = [{'type': 'bind', 'source': '/data', 'target': '/data'},
+                  {'type': 'bind', 'source': server_path_in, 'target': container_in},
                   {'type': 'bind', 'source': server_path_out, 'target': container_out}]  # mal entfernen in pull run
         logging.info(f'use mounts: {mounts}')
 
@@ -345,7 +346,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
             'container_status': status,
             'geoapi_status': res,
             'value': res,
-            'dir': host_path_out,
+            # 'host_dir': host_path_out,
+            'dir': server_path_out,
             'error:': error,
             'tool_logs': tool_logs
         }
