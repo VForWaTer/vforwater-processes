@@ -26,6 +26,11 @@ class PodmanProcessor():
     def pull_run_image(client, image_name, container_name, environment=None, mounts=None, network_mode=None,
                        volumes=None, command=None):
         secrets = PodmanProcessor.get_secrets()
+        # Log available Docker image
+        logging.info("The following images are available: ")
+        for i in client.images.list():
+            logging.info(f"Image ID: {i.id}, image name: {i.name}")
+
         # Pull the Docker image
         print("image: ", client.images.list(filters={"reference": image_name}))
         logging.info("image: ", client.images.list(filters={"reference": image_name}))
