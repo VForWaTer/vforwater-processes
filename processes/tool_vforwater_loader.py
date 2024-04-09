@@ -172,7 +172,6 @@ class VforwaterLoaderProcessor(BaseProcessor):
         super().__init__(processor_def, PROCESS_METADATA)
 
     def execute(self, data):
-        logging.info("___________________________ Started execution of vforwater loader ___________________________")
         mimetype = 'application/json'
         path = f'vfw_loader_{os.urandom(5).hex()}'
 
@@ -256,7 +255,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         # ________________  prepare data to run container _________________________
         logging.info('Prepare container data')
-        image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
+        image_name = 'localhost:5000/demo/tool_vforwater_loader:0.1'
+        # image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
         container_name = f'tool_vforwater_loader_{os.urandom(5).hex()}'
 
         container_in = '/in'
@@ -265,8 +265,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         server_path_in = f'{secrets["DATA_PATH"]}/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
         server_path_out = f'{secrets["DATA_PATH"]}/out/{user}/{path}'  # was out_dir
 
-        mounts = [{'type': 'bind', 'source': '/data', 'target': '/data'},
-                  {'type': 'bind', 'source': server_path_in, 'target': container_in},
+        mounts = [{'type': 'bind', 'source': '/data', 'target': '/data', 'read_only': True},
+                  {'type': 'bind', 'source': server_path_in, 'target': container_in, 'read_only': True},
                   {'type': 'bind', 'source': server_path_out, 'target': container_out}]  # mal entfernen in pull run
         logging.info(f'use mounts: {mounts}')
 
