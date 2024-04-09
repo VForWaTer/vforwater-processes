@@ -255,7 +255,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
 
         # ________________  prepare data to run container _________________________
         logging.info('Prepare container data')
-        image_name = 'vfwregistry:5000/demo/tool_vforwater_loader:0.1'
+        # image_name = 'vfwregistry:5000/demo/tool_vforwater_loader:0.1'
+        image_name = 'tool_vforwater_loader:0.1'
         # image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
         container_name = f'tool_vforwater_loader_{os.urandom(5).hex()}'
 
