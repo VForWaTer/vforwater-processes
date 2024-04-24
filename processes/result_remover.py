@@ -28,6 +28,7 @@
 # =================================================================
 
 import logging
+import os
 import shutil
 
 from pygeoapi.process.base import BaseProcessor, ProcessorExecuteError
@@ -125,19 +126,23 @@ class ResultRemoverProcessor(BaseProcessor):
     def execute(self, data):
         mimetype = 'application/json'
 
-        input_folders = data.get('input_folders', [])
-        output_folders = data.get('output_folders', [])
-        job_list = data.get('job_list', [])
-        # TODO: looks like there is no remove job implemented in pygeoapi. Add a remove job function when available.
-        #  Or write your own when there is nothing else to do...
-        #  Or even better: When owslib has the removal implemented, hopefully it cares about everything it doesn't even
-        #  need this result remover process.
+        try:
+            input_folders = data.get('input_folders', [])
+            output_folders = data.get('output_folders', [])
+            job_list = data.get('job_list', [])
+        except Exception as e:
+            logging.debug(f"There is a problem with the input parameters: {e}")
+
+        try:
+            secrets = PodmanProcessor.get_secrets()
+        except Exception as e:
+            logging.debug(f"Unable to get secrets: {e}")
 
         removed = []
         not_removed = []
         error = []
 
-        def __remove(folder_list, folder_location, removed_list, not_removed_list, error_list):
+        def __remove_folder(folder_list, folder_location, removed_list, not_removed_list, error_list):
             """
             Actual function to delete from hard disc.
 
@@ -172,8 +177,26 @@ class ResultRemoverProcessor(BaseProcessor):
 
             return removed_list, not_removed_list, error_list
 
-        removed, not_removed, error = __remove(input_folders, 'input', removed, not_removed, error)
-        removed, not_removed, error = __remove(output_folders, 'output', removed, not_removed, error)
+        # TODO: looks like there is no remove job implemented in pygeoapi. Add a remove job function when available.
+        #  Wrote our own function...
+        #  Or even better: When owslib has the removal implemented, hopefully it cares about everything it doesn't even
+        #  need this result remover process.
+        def __remove_db_entry(entry_list, removed_list, not_removed_list, error_list):
+
+            for i in entry_list:
+                try:
+                    os.remove(f'{secrets["DATA_PATH"]}/tinydb/{i}')
+                    removed_list.append(i)
+                    not_removed_list.append(i)
+                except Exception as e:
+                    error_list.append(e)
+                    logging.warning(f'Unable to remove tinydb entry {i}. Error: {e}')
+
+            return removed_list, not_removed_list, error_list
+
+        removed, not_removed, error = __remove_folder(input_folders, 'input', removed, not_removed, error)
+        removed, not_removed, error = __remove_folder(output_folders, 'output', removed, not_removed, error)
+        removed, not_removed, error = __remove_db_entry(job_list, removed, not_removed, error)
 
         outputs = {
             'container_status': 'finished',
