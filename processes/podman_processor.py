@@ -13,13 +13,14 @@ class PodmanProcessor():
         else:
             print("Podman service is running")
             logging.info("Podman service is running")
-            version = client.version()
-            print("Release: ", version["Version"])
-            logging.info("Release: ", version["Version"])
-            print("Compatible API: ", version["ApiVersion"])
-            logging.info("Compatible API: ", version["ApiVersion"])
-            print("Podman API: ", version["Components"][0]["Details"]["APIVersion"], "\n")
-            logging.info("Podman API: ", version["Components"][0]["Details"]["APIVersion"])
+            # TODO: There is a bug in the following code. Fix it
+            # version = client.version()
+            # print("Release: ", version["Version"])
+            # logging.info("Release: ", version["Version"])
+            # print("Compatible API: ", version["ApiVersion"])
+            # logging.info("Compatible API: ", version["ApiVersion"])
+            # print("Podman API: ", version["Components"][0]["Details"]["APIVersion"], "\n")
+            # logging.info("Podman API: ", version["Components"][0]["Details"]["APIVersion"])
 
         return client
 
@@ -27,21 +28,22 @@ class PodmanProcessor():
                        volumes=None, command=None):
         secrets = PodmanProcessor.get_secrets()
         # Log available Docker image
-        logging.info("The following images are available: ")
-        for i in client.images.list():
-            logging.info(f"Image ID: {i.id}, image name: {i.name}")
+        logging.info(f"client.images.list() {client.images.list()}")
+        # logging.info("The following images are available: ")
+        # for i in client.images.list():
+        #     logging.info(f"Image ID: {i.id}, image name: {i.name}")
 
         # Pull the Docker image
-        print("image: ", client.images.list(filters={"reference": image_name}))
-        logging.info("image: ", client.images.list(filters={"reference": image_name}))
-        if not client.images.list(filters={"reference": image_name}):
-            print(f"Pulling Podman image: {image_name}")
-            logging.info(f"Pulling Podman image: {image_name}")
-            client.images.pull(image_name)
+        # print("image: ", client.images.list(filters={"reference": image_name}))
+        # logging.info("image: ", client.images.list(filters={"reference": image_name}))
+        # if not client.images.list(filters={"reference": image_name}):
+        #     print(f"Pulling Podman image: {image_name}")
+        #     logging.info(f"Pulling Podman image: {image_name}")
+        #     client.images.pull(image_name)
 
         existing_container = client.containers.list(filters={"name": container_name})
         if existing_container:
-            print(f"Container '{container_name}' already exists. Removing...")
+            # print(f"Container '{container_name}' already exists. Removing...")
             logging.info(f"Container '{container_name}' already exists. Removing...")
             existing_container[0].stop()
             existing_container[0].remove(force=True)
@@ -71,20 +73,20 @@ class PodmanProcessor():
         # status of the container after starting
         container.reload()
         logging.info("Container reloaded")
-        print("container starting status :", container.status)
+        # print("container starting status :", container.status)
         logging.info("container starting status :", container.status)
 
         # Print container logs
-        print(f"Container '{container.name}' logs:")
+        # print(f"Container '{container.name}' logs:")
         logging.info(f" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Container '{container.name}' logs: _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
         for line in container.logs(stream=True):
-            print(line.strip().decode('utf-8'))
+            # print(line.strip().decode('utf-8'))
             logging.info(f" - - {line.decode('utf-8')} - - ")
-        logging.info(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ fnished logs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
+        logging.info(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ finished logs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
 
         # exit status code
         exit_status = container.wait()
-        print("exit_status :", exit_status)
+        # print("exit_status :", exit_status)
         logging.info("exit_status :", exit_status)
 
         # status of the container

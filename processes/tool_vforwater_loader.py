@@ -127,6 +127,18 @@ PROCESS_METADATA = {
             'minOccurs': 1,  # expect the data is required
             'maxOccurs': 1,
         },
+        # 'integration': {
+        #     'title': 'Define how result is handled on server.',
+        #     'description': 'Set if the results should be written to disk. All = can improve processing, '
+        #                    'none = slower but with result, XXX = faster but only for workflows'
+        #                    'BE AWARE, setting this parameter to XXX might result in no result at all.',
+        #     'schema': {
+        #         'type': 'string',
+        #         'enum': ['none', 'all', 'XXX'],
+        #         'default': 'none',
+        #         'required': 'true'
+        #     },
+        # },
     },
     'outputs': {
         'res': {
@@ -187,6 +199,9 @@ class VforwaterLoaderProcessor(BaseProcessor):
         start_date = data.get('start_date', '')  # path/name to numpy.ndarray
         end_date = data.get('end_date', '')  # integer
         reference_area = data.get('reference_area', {})
+        # TODO: integration becomes important in future versions, when we have workflows. For now this should be always
+        #  none, so the parameter is not available for the user. Uncomment it when needed
+        integration = data.get('integration', 'none')
 
         user = data.get('User-Info', "NO_USER")
 
@@ -219,6 +234,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         input_dict = {
             "vforwater_loader": {
                 "parameters": {
+                    "integration": integration,
                     "dataset_ids": dataset_ids,
                     "start_date": start_date,
                     "end_date": end_date,
@@ -256,7 +272,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # ________________  prepare data to run container _________________________
         logging.info('Prepare container data')
         # image_name = 'vfwregistry:5000/demo/tool_vforwater_loader:0.1'
-        image_name = 'tool_vforwater_loader:0.1'
+        # image_name = 'tool_vforwater_loader:0.2' # TODO: used for test; still valid?
+        image_name = 'tool_vforwater_loader:latest'
         # image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
         container_name = f'tool_vforwater_loader_{os.urandom(5).hex()}'
 
