@@ -124,6 +124,7 @@ class ResultRemoverProcessor(BaseProcessor):
         super().__init__(processor_def, PROCESS_METADATA)
 
     def execute(self, data):
+        logging.info(f"Entered remove data")
         mimetype = 'application/json'
 
         try:
@@ -167,7 +168,7 @@ class ResultRemoverProcessor(BaseProcessor):
             """
             for i in folder_list:
                 try:
-                    shutil.rmtree(i)
+                    shutil.rmtree(f'{secrets["GEOAPI_PATH"]}/{folder_location}/{i}')
                     logging.info(f'Removed {folder_location} folder {i}')
                     removed_list.append(i)
                 except Exception as e:
@@ -185,7 +186,7 @@ class ResultRemoverProcessor(BaseProcessor):
 
             for i in entry_list:
                 try:
-                    os.remove(f'{secrets["DATA_PATH"]}/tinydb/{i}')
+                    os.remove(f'{secrets["GEOAPI_PATH"]}/tinydb/{i}')
                     removed_list.append(i)
                     not_removed_list.append(i)
                 except Exception as e:
@@ -194,8 +195,8 @@ class ResultRemoverProcessor(BaseProcessor):
 
             return removed_list, not_removed_list, error_list
 
-        removed, not_removed, error = __remove_folder(input_folders, 'input', removed, not_removed, error)
-        removed, not_removed, error = __remove_folder(output_folders, 'output', removed, not_removed, error)
+        removed, not_removed, error = __remove_folder(input_folders, 'in', removed, not_removed, error)
+        removed, not_removed, error = __remove_folder(output_folders, 'out', removed, not_removed, error)
         removed, not_removed, error = __remove_db_entry(job_list, removed, not_removed, error)
 
         outputs = {
