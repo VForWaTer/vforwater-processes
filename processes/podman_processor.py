@@ -87,12 +87,12 @@ class PodmanProcessor():
         # exit status code
         exit_status = container.wait()
         # print("exit_status :", exit_status)
-        logging.info("exit_status :", exit_status)
+        logging.info(f"exit_status : {exit_status}")
 
         # status of the container
         container.reload()
         print("container  exiting status :", container.status)
-        logging.info("container  exiting status :", container.status)
+        logging.info(f"container  exiting status : {container.status}")
 
         return container
         # return {

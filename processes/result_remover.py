@@ -187,9 +187,10 @@ class ResultRemoverProcessor(BaseProcessor):
             for i in entry_list:
                 try:
                     os.remove(f'{secrets["GEOAPI_PATH"]}/tinydb/{i}')
+                    logging.info(f'Removed tinydb folder {i}')
                     removed_list.append(i)
-                    not_removed_list.append(i)
                 except Exception as e:
+                    not_removed_list.append(i)
                     error_list.append(e)
                     logging.warning(f'Unable to remove tinydb entry {i}. Error: {e}')
 
