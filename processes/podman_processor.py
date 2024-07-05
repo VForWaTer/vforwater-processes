@@ -23,23 +23,23 @@ class PodmanProcessor():
             # logging.info("Podman API: ", version["Components"][0]["Details"]["APIVersion"])
 
         return client
-
+    @staticmethod
     def pull_run_image(client, image_name, container_name, environment=None, mounts=None, network_mode=None,
                        volumes=None, command=None):
         secrets = PodmanProcessor.get_secrets()
         # Log available Docker image
         logging.info(f"client.images.list() {client.images.list()}")
-        # logging.info("The following images are available: ")
-        # for i in client.images.list():
-        #     logging.info(f"Image ID: {i.id}, image name: {i.name}")
+        logging.info("The following images are available: ")
+        for i in client.images.list():
+            logging.info(f"Image ID: {i.id}, image name: {i.tags}") #{i.name}
 
         # Pull the Docker image
-        # print("image: ", client.images.list(filters={"reference": image_name}))
-        # logging.info("image: ", client.images.list(filters={"reference": image_name}))
-        # if not client.images.list(filters={"reference": image_name}):
-        #     print(f"Pulling Podman image: {image_name}")
-        #     logging.info(f"Pulling Podman image: {image_name}")
-        #     client.images.pull(image_name)
+        print("image: ", client.images.list(filters={"reference": image_name}))
+        logging.info("image: ", client.images.list(filters={"reference": image_name}))
+        if not client.images.list(filters={"reference": image_name}):
+            print(f"Pulling Podman image: {image_name}")
+            logging.info(f"Pulling Podman image: {image_name}")
+            client.images.pull(image_name)
 
         existing_container = client.containers.list(filters={"name": container_name})
         if existing_container:
@@ -63,43 +63,46 @@ class PodmanProcessor():
                 remove=False
             )
             logging.info(f"Container to use: {container}")
-        except Exception as e:
-            logging.info(f"Cannot run client.container. Error: {e}")
+        # except Exception as e:
+        #     logging.info(f"Cannot run client.container. Error: {e}")
 
-        # Start the container
-        container.start()
-        logging.info("Container started")
+            # Start the container
+            container.start()
+            logging.info("Container started")
 
-        # status of the container after starting
-        container.reload()
-        logging.info("Container reloaded")
-        # print("container starting status :", container.status)
-        logging.info("container starting status :", container.status)
+            # status of the container after starting
+            container.reload()
+            logging.info("Container reloaded")
+            # print("container starting status :", container.status)
+            logging.info("container starting status :", container.status)
 
-        # Print container logs
-        # print(f"Container '{container.name}' logs:")
-        logging.info(f" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Container '{container.name}' logs: _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
-        for line in container.logs(stream=True):
-            # print(line.strip().decode('utf-8'))
-            logging.info(f" - - {line.decode('utf-8')} - - ")
-        logging.info(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ finished logs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
+            # Print container logs
+            # print(f"Container '{container.name}' logs:")
+            logging.info(f" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Container '{container.name}' logs: _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
+            for line in container.logs(stream=True):
+                # print(line.strip().decode('utf-8'))
+                logging.info(f" - - {line.decode('utf-8')} - - ")
+            logging.info(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ finished logs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
 
-        # exit status code
-        exit_status = container.wait()
-        # print("exit_status :", exit_status)
-        logging.info(f"exit_status : {exit_status}")
+            # exit status code
+            exit_status = container.wait()
+            # print("exit_status :", exit_status)
+            logging.info(f"exit_status : {exit_status}")
 
-        # status of the container
-        container.reload()
-        print("container  exiting status :", container.status)
-        logging.info(f"container  exiting status : {container.status}")
+            # status of the container
+            container.reload()
+            print("container  exiting status :", container.status)
+            logging.info(f"container  exiting status : {container.status}")
 
-        return container
+            return container
         # return {
         #     "container": container,
         #     "container_status": container.status
         # }
-
+        except Exception as e:
+            logging.error(f"Cannot run client.container. Error: {e}")
+            raise
+        
     def get_secrets(file_name="processes/secret.txt"):
 
         secrets = {}
