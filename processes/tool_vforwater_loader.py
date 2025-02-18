@@ -44,8 +44,8 @@ PROCESS_METADATA = {
     'version': '0.4.0',
     'id': 'vforwater_loader',
     'title': {
-        'en': 'Loader for datasets stored in a metacatalog instance.',
-        'de': 'Lader für Datensätze, die in einer Metakatalog-Instanz gespeichert sind.'
+        'en': 'Dataset Loader',
+        'de': 'Lader für Datensätze'
     },
     'description': {
         'en': 'This tool will use `metacatalog` to load datasets stored in a metacatalog instance, like V-FOR-WaTer. '
