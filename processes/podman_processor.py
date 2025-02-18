@@ -35,7 +35,7 @@ class PodmanProcessor():
 
         # Pull the Docker image
         print("image: ", client.images.list(filters={"reference": image_name}))
-        logging.info("image: ", client.images.list(filters={"reference": image_name}))
+        logging.info(f"image: {client.images.list(filters={"reference": image_name})}")
         if not client.images.list(filters={"reference": image_name}):
             print(f"Pulling Podman image: {image_name}")
             logging.info(f"Pulling Podman image: {image_name}")
@@ -74,7 +74,7 @@ class PodmanProcessor():
             container.reload()
             logging.info("Container reloaded")
             # print("container starting status :", container.status)
-            logging.info("container starting status :", container.status)
+            logging.info(f"container starting status : {container.status}")
 
             # Print container logs
             # print(f"Container '{container.name}' logs:")
