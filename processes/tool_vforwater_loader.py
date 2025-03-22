@@ -127,6 +127,20 @@ PROCESS_METADATA = {
             'minOccurs': 1,  # expect the data is required
             'maxOccurs': 1,
         },
+        'cell_touches': {
+            'title': 'Cell Touches',
+            'description':  'If set to true, the tool will only return datasets that have a spatial overlap with the reference area.'
+                        'If set to false, the tool will return datasets that have a spatial overlap or touch the reference area.'
+                        'If omitted, the default is true.'
+                        'Note: This parameter only applies to datasets with a defined spatial scale extent.',
+            'schema': {
+                'type': 'boolean',
+                'default': True,
+                'required': 'false'
+            },
+            'minOccurs': 0,
+            'maxOccurs': 1,
+    },
         # 'integration': {
         #     'title': 'Define how result is handled on server.',
         #     'description': 'Set if the results should be written to disk. All = can improve processing, '
@@ -201,8 +215,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         reference_area = data.get('reference_area', {})
         # TODO: integration becomes important in future versions, when we have workflows. For now this should be always
         #  none, so the parameter is not available for the user. Uncomment it when needed
-        integration = data.get('integration', 'none')
-
+        # integration = data.get('integration', 'none')
+        cell_touches = data.get('cell_touches', True)
         user = data.get('User-Info', "NO_USER")
 
         logging.info('Data is loaded')
@@ -234,11 +248,12 @@ class VforwaterLoaderProcessor(BaseProcessor):
         input_dict = {
             "vforwater_loader": {
                 "parameters": {
-                    "integration": integration,
+                    # "integration": integration,
                     "dataset_ids": dataset_ids,
                     "start_date": start_date,
                     "end_date": end_date,
-                    "reference_area": reference_area
+                    "reference_area": reference_area,
+                    "cell_touches": cell_touches
                 }
             }}
 
@@ -272,7 +287,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # ________________  prepare data to run container _________________________
         logging.info('Prepare container data')
         # image_name = 'vfwregistry:5000/demo/tool_vforwater_loader:0.1'
-        image_name = 'tool_vforwater_loader:0.2' # TODO: used for test; still valid?
+        image_name = 'tool_vforwater_loader:latest' # TODO: used for test; still valid?
         # image_name = 'tool_vforwater_loader:latest'
         # image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:latest'
         container_name = f'tool_vforwater_loader_{os.urandom(5).hex()}'
