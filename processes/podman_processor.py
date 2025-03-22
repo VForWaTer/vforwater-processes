@@ -35,7 +35,8 @@ class PodmanProcessor():
 
         # Pull the Docker image
         print("image: ", client.images.list(filters={"reference": image_name}))
-        logging.info(f"image: {client.images.list(filters={"reference": image_name})}")
+        filters = {"reference": image_name}
+        logging.info(f"image: {client.images.list(filters=filters)}")
         if not client.images.list(filters={"reference": image_name}):
             print(f"Pulling Podman image: {image_name}")
             logging.info(f"Pulling Podman image: {image_name}")
