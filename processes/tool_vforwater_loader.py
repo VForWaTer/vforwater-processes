@@ -215,7 +215,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         reference_area = data.get('reference_area', {})
         # TODO: integration becomes important in future versions, when we have workflows. For now this should be always
         #  none, so the parameter is not available for the user. Uncomment it when needed
-        # integration = data.get('integration', 'none')
+        integration = data.get('integration', 'none')
         cell_touches = data.get('cell_touches', True)
         user = data.get('User-Info', "NO_USER")
 
@@ -248,7 +248,7 @@ class VforwaterLoaderProcessor(BaseProcessor):
         input_dict = {
             "vforwater_loader": {
                 "parameters": {
-                    # "integration": integration,
+                    "integration": integration,
                     "dataset_ids": dataset_ids,
                     "start_date": start_date,
                     "end_date": end_date,
