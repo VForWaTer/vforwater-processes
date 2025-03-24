@@ -2,7 +2,8 @@
 import logging
 import json
 import os
-from pygeoapi.process.base import BaseProcessor, ProcessorExecuteError
+import shutil
+from pygeoapi.process.base import BaseProcessor
 from processes.podman_processor import PodmanProcessor
 
 PROCESS_METADATA = {
@@ -13,8 +14,8 @@ PROCESS_METADATA = {
         'de': 'Whitebox GIS Werkzeug'
     },
     'description': {
-        'en': 'Runs Whitebox GIS operations on input raster data.',
-        'de': 'Führt Whitebox GIS-Operationen auf Eingabedaten aus.'
+        'en': 'Runs Whitebox GIS operations on input raster data with config.',
+        'de': 'Führt Whitebox GIS-Operationen auf Eingabedaten mit Konfiguration aus.'
     },
     'keywords': ['whitebox', 'gis', 'raster', 'terrain analysis'],
     'links': [{
@@ -25,14 +26,19 @@ PROCESS_METADATA = {
         'hreflang': 'en-US'
     }],
     'inputs': {
-        'input_raster': {
-            'title': 'Input Raster Path',
-            'description': 'The input raster file path (GeoTIFF).',
+        'config_json': {
+            'title': 'Input JSON config file path',
+            'description': 'Path to input.json file containing parameters.',
             'schema': {
                 'type': 'string'
-            },
-            'minOccurs': 1,
-            'maxOccurs': 1
+            }
+        },
+        'raster_file': {
+            'title': 'Input raster file path',
+            'description': 'Path to dem.tif file.',
+            'schema': {
+                'type': 'string'
+            }
         }
     },
     'outputs': {
@@ -55,29 +61,27 @@ class WhiteboxGISProcessor(BaseProcessor):
     def execute(self, data):
         mimetype = 'application/json'
         path = f'whitebox_{os.urandom(5).hex()}'
+        user = 'default'
 
-        input_raster = data.get('input_raster', '/data/example_inputs/elevation.tif')
-        user = data.get('User-Info', "NO_USER")
+        config_path = data.get('config_json')
+        raster_path = data.get('raster_file')
+
+        if not config_path or not raster_path:
+            raise ValueError("Both 'config_json' and 'raster_file' must be provided")
 
         secrets = PodmanProcessor.get_secrets()
         host_path_in = f'{secrets["GEOAPI_PATH"]}/in/{user}/{path}'
         host_path_out = f'{secrets["GEOAPI_PATH"]}/out/{user}/{path}'
-        server_path_in = f'{secrets["DATA_PATH"]}/in/{user}/{path}'
         server_path_out = f'{secrets["DATA_PATH"]}/out/{user}/{path}'
 
         os.makedirs(host_path_in, exist_ok=True)
         os.makedirs(host_path_out, exist_ok=True)
 
-        input_dict = {
-            "whiteboxgis_tool": {
-                "parameters": {
-                    "input_raster": input_raster
-                }
-            }
-        }
-
-        with open(f'{host_path_in}/inputs.json', 'w', encoding='utf-8') as f:
-            json.dump(input_dict, f, ensure_ascii=False, indent=4)
+        try:
+            shutil.copy(config_path, f'{host_path_in}/input.json')
+            shutil.copy(raster_path, f'{host_path_in}/dem.tif')
+        except Exception as e:
+            raise RuntimeError(f"Failed to copy input files: {e}")
 
         image_name = 'tool_whiteboxgis:latest'
         container_name = f'whiteboxgis_tool_{os.urandom(5).hex()}'
@@ -85,9 +89,8 @@ class WhiteboxGISProcessor(BaseProcessor):
         container_out = '/out'
 
         mounts = [
-            {'type': 'bind', 'source': '/data', 'target': '/data', 'read_only': True},
-            {'type': 'bind', 'source': server_path_in, 'target': container_in, 'read_only': True},
-            {'type': 'bind', 'source': server_path_out, 'target': container_out}
+            {'type': 'bind', 'source': host_path_in, 'target': container_in, 'read_only': True},
+            {'type': 'bind', 'source': host_path_out, 'target': container_out}
         ]
 
         volumes = {
