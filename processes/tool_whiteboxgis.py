@@ -98,11 +98,16 @@ class WhiteboxGISProcessor(BaseProcessor):
             host_path_out: {'bind': container_out, 'mode': 'rw'}
         }
 
-        environment = {}
+        environment = {
+            'TOOL_RUN': 'hillslope_generator'
+        }
         network_mode = 'host'
         command = ["python", "/src/run.py"]
 
         error = 'none'
+        print(f"Running with input.json: {config_path}")
+        print(f"Running with dem.tif: {raster_path}")
+        print(f"Environment: {environment}")
         try:
             client = PodmanProcessor.connect(secrets['PODMAN_URI'])
             container = PodmanProcessor.pull_run_image(
