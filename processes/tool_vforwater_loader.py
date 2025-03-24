@@ -41,7 +41,7 @@ from podman import PodmanClient
 
 #: Process metadata and description
 PROCESS_METADATA = {
-    'version': '0.13.0',
+    'version': '0.4.0',
     'id': 'vforwater_loader',
     'title': {
         'en': 'Dataset Loader',
@@ -127,20 +127,6 @@ PROCESS_METADATA = {
             'minOccurs': 1,  # expect the data is required
             'maxOccurs': 1,
         },
-        'cell_touches': {
-            'title': 'Cell Touches',
-            'description':  'If set to true, the tool will only return datasets that have a spatial overlap with the reference area.'
-                        'If set to false, the tool will return datasets that have a spatial overlap or touch the reference area.'
-                        'If omitted, the default is true.'
-                        'Note: This parameter only applies to datasets with a defined spatial scale extent.',
-            'schema': {
-                'type': 'boolean',
-                'default': True,
-                'required': 'false'
-            },
-            'minOccurs': 0,
-            'maxOccurs': 1,
-    },
         # 'integration': {
         #     'title': 'Define how result is handled on server.',
         #     'description': 'Set if the results should be written to disk. All = can improve processing, '
@@ -215,8 +201,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         reference_area = data.get('reference_area', {})
         # TODO: integration becomes important in future versions, when we have workflows. For now this should be always
         #  none, so the parameter is not available for the user. Uncomment it when needed
-        # integration = data.get('integration', 'none')
-        cell_touches = data.get('cell_touches', True)
+        integration = data.get('integration', 'none')
+
         user = data.get('User-Info', "NO_USER")
 
         logging.info('Data is loaded')
@@ -248,12 +234,11 @@ class VforwaterLoaderProcessor(BaseProcessor):
         input_dict = {
             "vforwater_loader": {
                 "parameters": {
-                    # "integration": integration,
+                    "integration": integration,
                     "dataset_ids": dataset_ids,
                     "start_date": start_date,
                     "end_date": end_date,
-                    "reference_area": reference_area,
-                    "cell_touches": cell_touches
+                    "reference_area": reference_area
                 }
             }}
 
