@@ -1,44 +1,67 @@
-
 import logging
 import json
 import os
-import shutil
 from pygeoapi.process.base import BaseProcessor
 from processes.podman_processor import PodmanProcessor
 
 PROCESS_METADATA = {
-    'version': '0.1.0',
+    'version': '0.2.0',
     'id': 'whiteboxgis_tool',
     'title': {
         'en': 'Whitebox GIS Tool',
         'de': 'Whitebox GIS Werkzeug'
     },
     'description': {
-        'en': 'Runs Whitebox GIS operations on input raster data with config.',
-        'de': 'Führt Whitebox GIS-Operationen auf Eingabedaten mit Konfiguration aus.'
+        'en': 'Runs Whitebox GIS operations like hillslope generation or terrain analysis.',
+        'de': 'Führt Whitebox GIS-Operationen wie Hangauswertung oder Terrainanalyse durch.'
     },
-    'keywords': ['whitebox', 'gis', 'raster', 'terrain analysis'],
+    'keywords': ['whitebox', 'gis', 'raster', 'terrain', 'hydrology'],
     'links': [{
         'type': 'text/html',
         'rel': 'about',
-        'title': 'information',
+        'title': 'Information',
         'href': 'https://github.com/VForWaTer/tool_whiteboxgis',
         'hreflang': 'en-US'
     }],
     'inputs': {
-        'config_json': {
-            'title': 'Input JSON config file path',
-            'description': 'Path to input.json file containing parameters.',
-            'schema': {
-                'type': 'string'
-            }
-        },
         'raster_file': {
             'title': 'Input raster file path',
-            'description': 'Path to dem.tif file.',
+            'description': 'Path to the input DEM GeoTIFF file.',
             'schema': {
                 'type': 'string'
-            }
+            },
+            'minOccurs': 1,
+            'maxOccurs': 1
+        },
+        'tool_name': {
+            'title': 'Whitebox Tool Name',
+            'description': 'Tool to run inside the container (e.g., "hillslope_generator")',
+            'schema': {
+                'type': 'string',
+                'default': 'hillslope_generator'
+            },
+            'minOccurs': 0,
+            'maxOccurs': 1
+        },
+        'stream_threshold': {
+            'title': 'Stream Threshold',
+            'description': 'Threshold value for stream extraction',
+            'schema': {
+                'type': 'number',
+                'default': 100.0
+            },
+            'minOccurs': 0,
+            'maxOccurs': 1
+        },
+        'to_file': {
+            'title': 'Write Output to File',
+            'description': 'Whether the tool should save output to file',
+            'schema': {
+                'type': 'boolean',
+                'default': True
+            },
+            'minOccurs': 0,
+            'maxOccurs': 1
         }
     },
     'outputs': {
@@ -61,13 +84,15 @@ class WhiteboxGISProcessor(BaseProcessor):
     def execute(self, data):
         mimetype = 'application/json'
         path = f'whitebox_{os.urandom(5).hex()}'
-        user = 'default'
+        user = data.get('User-Info', 'default')
 
-        config_path = data.get('config_json')
         raster_path = data.get('raster_file')
+        tool_name = data.get('tool_name', 'hillslope_generator')
+        stream_threshold = data.get('stream_threshold', 100.0)
+        to_file = data.get('to_file', True)
 
-        if not config_path or not raster_path:
-            raise ValueError("Both 'config_json' and 'raster_file' must be provided")
+        if not raster_path:
+            raise ValueError("Missing required 'raster_file'")
 
         secrets = PodmanProcessor.get_secrets()
         host_path_in = f'{secrets["GEOAPI_PATH"]}/in/{user}/{path}'
@@ -77,11 +102,20 @@ class WhiteboxGISProcessor(BaseProcessor):
         os.makedirs(host_path_in, exist_ok=True)
         os.makedirs(host_path_out, exist_ok=True)
 
+        input_dict = {
+            "tool_name": tool_name,
+            "parameters": {
+                "stream_threshold": stream_threshold,
+                "toFile": to_file
+            }
+        }
+
         try:
-            shutil.copy(config_path, f'{host_path_in}/input.json')
-            shutil.copy(raster_path, f'{host_path_in}/dem.tif')
+            with open(f'{host_path_in}/input.json', 'w') as f:
+                json.dump(input_dict, f, indent=4)
+            os.system(f'cp "{raster_path}" "{host_path_in}/dem.tif"')
         except Exception as e:
-            raise RuntimeError(f"Failed to copy input files: {e}")
+            raise RuntimeError(f"Error preparing input files: {e}")
 
         image_name = 'tool_whiteboxgis:latest'
         container_name = f'whiteboxgis_tool_{os.urandom(5).hex()}'
@@ -98,16 +132,11 @@ class WhiteboxGISProcessor(BaseProcessor):
             host_path_out: {'bind': container_out, 'mode': 'rw'}
         }
 
-        environment = {
-            'TOOL_RUN': 'hillslope_generator'
-        }
+        environment = {'TOOL_RUN': tool_name}
         network_mode = 'host'
         command = ["python", "/src/run.py"]
 
         error = 'none'
-        print(f"Running with input.json: {config_path}")
-        print(f"Running with dem.tif: {raster_path}")
-        print(f"Environment: {environment}")
         try:
             client = PodmanProcessor.connect(secrets['PODMAN_URI'])
             container = PodmanProcessor.pull_run_image(
