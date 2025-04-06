@@ -12,10 +12,10 @@ PROCESS_METADATA = {
         'de': 'Whitebox GIS Werkzeug'
     },
     'description': {
-        'en': 'Runs Whitebox GIS operations with support for merging multiple input rasters (e.g. terrain analysis).',
-        'de': 'Führt Whitebox GIS-Operationen mit Unterstützung für das Zusammenführen mehrerer Raster durch.'
+        'en': 'Executes terrain analysis and GIS operations with input.json based configuration as defined in the GitHub repo.',
+        'de': 'Führt GIS-Operationen durch, gesteuert über input.json wie im GitHub-Repository definiert.'
     },
-    'keywords': ['whitebox', 'gis', 'raster', 'merge', 'terrain', 'hydrology'],
+    'keywords': ['whitebox', 'gis', 'input.json', 'terrain', 'merge'],
     'links': [{
         'type': 'text/html',
         'rel': 'about',
@@ -24,43 +24,26 @@ PROCESS_METADATA = {
         'hreflang': 'en-US'
     }],
     'inputs': {
+        'input_json': {
+            'title': 'Input JSON Configuration',
+            'description': 'Full JSON object matching the structure used in the GitHub test folder (whitebox_info, merge_tifs, etc.)',
+            'schema': {
+                'type': 'object'
+            }
+        },
         'raster_files': {
             'title': 'Raster files',
-            'description': 'List of input raster (GeoTIFF) files to process and merge.',
+            'description': 'List of input raster (GeoTIFF) file paths to be copied into /in folder.',
             'schema': {
                 'type': 'array',
                 'items': {'type': 'string'}
-            }
-        },
-        'tool_name': {
-            'title': 'Whitebox Tool Name',
-            'description': 'Tool to run inside the container (e.g., "hillslope_generator")',
-            'schema': {
-                'type': 'string',
-                'default': 'hillslope_generator'
-            }
-        },
-        'stream_threshold': {
-            'title': 'Stream Threshold',
-            'description': 'Threshold value for stream extraction',
-            'schema': {
-                'type': 'number',
-                'default': 100.0
-            }
-        },
-        'to_file': {
-            'title': 'Write Output to File',
-            'description': 'Whether the tool should save output to file',
-            'schema': {
-                'type': 'boolean',
-                'default': True
             }
         }
     },
     'outputs': {
         'result': {
             'title': 'Output directory',
-            'description': 'Directory with output files',
+            'description': 'Directory with result files',
             'schema': {
                 'type': 'object',
                 'contentMediaType': 'application/json'
@@ -73,10 +56,33 @@ PROCESS_METADATA = {
     },
     'example': {
         'inputs': {
-            'tool_name': 'hillslope_generator',
-            'raster_files': ['elevation1.tif', 'elevation2.tif'],
-            'stream_threshold': 100.0,
-            'to_file': True
+            'input_json': {
+                "whitebox_info": {
+                    "parameters": {
+                        "toFile": True
+                    }
+                },
+                "merge_tifs": {
+                    "parameters": {
+                        "method": "nn"
+                    },
+                    "data": {
+                        "in_file": "/in"
+                    }
+                },
+                "hillslope_generator": {
+                    "parameters": {
+                        "stream_threshold": 100
+                    },
+                    "data": {
+                        "dem": "/in/dem.tif"
+                    }
+                }
+            },
+            "raster_files": [
+                "/data/geoapi_data/in/testuser/testwhitebox/elevation1.tif",
+                "/data/geoapi_data/in/testuser/testwhitebox/elevation2.tif"
+            ]
         }
     }
 }
@@ -92,11 +98,11 @@ class WhiteboxGISProcessor(BaseProcessor):
             path = f'whitebox_{os.urandom(5).hex()}'
         user = data.get('User-Info', 'default')
 
+        input_json = data.get('input_json')
         raster_files = data.get('raster_files', [])
-        tool_name = data.get('tool_name', 'hillslope_generator')
-        stream_threshold = data.get('stream_threshold', 100.0)
-        to_file = data.get('to_file', True)
 
+        if not input_json:
+            raise ValueError("Missing 'input_json' configuration.")
         if not raster_files or not isinstance(raster_files, list):
             raise ValueError("Missing or invalid 'raster_files' input.")
 
@@ -108,22 +114,20 @@ class WhiteboxGISProcessor(BaseProcessor):
         os.makedirs(host_path_in, exist_ok=True)
         os.makedirs(host_path_out, exist_ok=True)
 
-        # Write input.json
-        input_dict = {
-            "inputs": raster_files
-        }
         try:
-            with open(f'{host_path_in}/inputs.json', 'w') as f:
-                json.dump(input_dict, f, indent=4)
+            with open(f'{host_path_in}/input.json', 'w') as f:
+                json.dump(input_json, f, indent=4)
 
-            for i, raster in enumerate(raster_files):
-                target = os.path.join(host_path_in, f"elevation{i+1}.tif")
-                os.system(f'cp "{raster}" "{target}"')
+            # Copy all raster files into /in folder
+            for raster_file in raster_files:
+                base = os.path.basename(raster_file)
+                target_path = os.path.join(host_path_in, base)
+                os.system(f'cp "{raster_file}" "{target_path}"')
 
         except Exception as e:
             raise RuntimeError(f"Error preparing input files: {e}")
 
-        image_name = 'ghcr.io/vforwater/tbr_whitebox:v0.9.1'
+        image_name = 'ghcr.io/vforwater/tbr_whitebox:v0.9.2'
         container_name = f'whiteboxgis_tool_{os.urandom(5).hex()}'
         container_in = '/in'
         container_out = '/out'
@@ -133,12 +137,7 @@ class WhiteboxGISProcessor(BaseProcessor):
             {'type': 'bind', 'source': host_path_out, 'target': container_out}
         ]
 
-        environment = {
-            'TOOL_RUN': tool_name,
-            'STREAM_THRESHOLD': str(stream_threshold),
-            'TO_FILE': str(to_file)
-        }
-
+        environment = {}
         command = ["python", "/src/run.py"]
         error = 'none'
         try:
