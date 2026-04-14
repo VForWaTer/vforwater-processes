@@ -5,10 +5,10 @@ from pygeoapi.process.base import BaseProcessor
 from processes.podman_processor import PodmanProcessor
 
 PROCESS_METADATA = {
-    'version': '0.9.2.1',
-    'id': 'tool_whiteboxgis_v_0_9_2',
+    'version': '0.9.5',  # bumped
+    'id': 'tool_whiteboxgis_v_0_9_5',  # bumped
     'title': {
-        'en': 'Whitebox GIS Tool V0.9.2',
+        'en': 'Whitebox GIS Tool V0.9.5',
         'de': 'Whitebox GIS Werkzeug'
     },
     'description': {
@@ -41,14 +41,52 @@ PROCESS_METADATA = {
                 'default': 'nn',
                 'example': 'nn'
             }
-        },        
+        },
+        # --- new tool params (still optional with defaults) ---
+        'target_epsg': {
+            'title': 'Target EPSG',
+            'description': 'Target CRS for reproject_to_metric',
+            'schema': {
+                'type': 'integer',
+                'default': 25832,
+                'example': 25832
+            }
+        },
+        'cell_size': {
+            'title': 'Cell size (m)',
+            'description': 'Output pixel size for reproject_to_metric',
+            'schema': {
+                'type': 'number',
+                'default': 30,
+                'example': 30
+            }
+        },
+        'resampling': {
+            'title': 'Resampling for reprojection',
+            'description': "Method for reproject_to_metric: 'nearest', 'bilinear', or 'cubic'",
+            'schema': {
+                'type': 'string',
+                'default': 'bilinear',
+                'example': 'bilinear'
+            }
+        },
+        'source_epsg': {
+            'title': 'Source EPSG (optional)',
+            'description': 'Assign if input is missing CRS (reproject_to_metric); otherwise ignored',
+            'schema': {
+                'type': 'integer',
+                'default': 4326,
+                'example': 4326
+            }
+        },
+        # ------------------------------------------------------
         'stream_threshold': {
             'title': 'Stream Threshold',
             'description': 'Threshold value for stream extraction',
             'schema': {
                 'type': 'number',
-                'default': 100.0,
-                'example': 100.0
+                'default': 10000.0,  # changed from 100.0
+                'example': 10000.0
             }
         },
         'to_file': {
@@ -87,7 +125,7 @@ PROCESS_METADATA = {
         'inputs': {
             'tool_name': 'hillslope_generator',
             'raster_file': '/in/dem.tif',
-            'stream_threshold': 100.0,
+            'stream_threshold': 10000,
             'to_file': True
         }
     }
@@ -108,9 +146,14 @@ class WhiteboxGISProcessorV092(BaseProcessor):
         tool_name = data.get('tool_name', 'hillslope_generator')
         logging.info(f"📤 tool_name from whiteboxgis: {tool_name}")
 
-        stream_threshold = data.get('stream_threshold', 100.0)
+        stream_threshold = data.get('stream_threshold', 10000.0)  # new default
         method = data.get('method', 'nn')
         to_file = data.get('to_file', True)
+        target_epsg = int(data.get('target_epsg', 25832))
+        cell_size = float(data.get('cell_size', 30))
+        resampling = data.get('resampling', 'bilinear')
+        source_epsg = int(data.get('source_epsg', 4326))
+
         logging.info(f"📤 to_file from whiteboxgis: {to_file}")
 
         if not raster_path:
@@ -120,9 +163,12 @@ class WhiteboxGISProcessorV092(BaseProcessor):
         host_path_in = f'{secrets["GEOAPI_PATH"]}/in/{user}/{path}'
         host_path_out = f'{secrets["GEOAPI_PATH"]}/out/{user}/{path}'
         server_path_out = f'{secrets["DATA_PATH"]}/out/{user}/{path}'
+        server_path_in = f'{secrets["DATA_PATH"]}/in/{user}/{path}'
 
         os.makedirs(host_path_in, exist_ok=True)
         os.makedirs(host_path_out, exist_ok=True)
+        os.makedirs(server_path_in, exist_ok=True)
+        os.makedirs(server_path_out, exist_ok=True)
 
         if tool_name == "hillslope_generator":
             input_dict = {
@@ -136,7 +182,6 @@ class WhiteboxGISProcessorV092(BaseProcessor):
                     }
                 }
             }
-            # Copy DEM file
             target_raster_path = os.path.join(host_path_in, "dem.tif")
             os.system(f'cp "{raster_path}" "{target_raster_path}"')
             logging.info("✅ copied %d data to %s", len(raster_path), target_raster_path)
@@ -149,13 +194,32 @@ class WhiteboxGISProcessorV092(BaseProcessor):
                         "toFile": to_file
                     },
                     "data": {
-                        "in_file": "/in"
+                        # v0.9.5: input_files now points to folder
+                        "input_files": "/in"
                     }
                 }
             }
-            # Copy entire folder of rasters
             os.system(f'cp {raster_path}/*.tif {host_path_in}/')
             logging.info("✅ to copy %d data to %s", len(raster_path), host_path_in)
+
+        elif tool_name == "reproject_to_metric":
+            input_dict = {
+                tool_name: {
+                    "parameters": {
+                        "target_epsg": target_epsg,
+                        "cell_size": cell_size,
+                        "resampling": resampling,
+                        "source_epsg": source_epsg,
+                        "toFile": to_file
+                    },
+                    "data": {
+                        "dem": "/in/dem.tif"
+                    }
+                }
+            }
+            target_raster_path = os.path.join(host_path_in, "dem.tif")
+            os.system(f'cp "{raster_path}" "{target_raster_path}"')
+            logging.info("✅ copied %d data to %s", len(raster_path), target_raster_path)
 
         else:
             raise ValueError(f"Unsupported tool_name: {tool_name}")
@@ -166,13 +230,13 @@ class WhiteboxGISProcessorV092(BaseProcessor):
         except Exception as e:
             raise RuntimeError(f"Error writing input.json: {e}")
 
-        image_name = 'ghcr.io/vforwater/tbr_whitebox:v0.9.2.1'
+        image_name = 'ghcr.io/vforwater/tbr_whitebox:v0.9.5'
         container_name = f'whiteboxgis_tool_{os.urandom(5).hex()}'
         container_in = '/in'
         container_out = '/out'
         mounts = [
-            {'type': 'bind', 'source': f'/data/geoapi_data/in/{user}/{path}', 'target': container_in, 'read_only': True},
-            {'type': 'bind', 'source': f'/data/geoapi_data/out/{user}/{path}', 'target': container_out}
+            {'type': 'bind', 'source': server_path_in, 'target': container_in, 'read_only': True},
+            {'type': 'bind', 'source': server_path_out, 'target': container_out}
         ]
 
         environment = {'TOOL_RUN': tool_name}
