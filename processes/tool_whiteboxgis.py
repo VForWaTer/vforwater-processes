@@ -5,17 +5,17 @@ from pygeoapi.process.base import BaseProcessor
 from processes.podman_processor import PodmanProcessor
 
 PROCESS_METADATA = {
-    'version': '0.9.2',
+    'version': '0.9.0',
     'id': 'tool_whiteboxgis',
     'title': {
         'en': 'Whitebox GIS Tool',
         'de': 'Whitebox GIS Werkzeug'
     },
     'description': {
-        'en': 'Executes terrain analysis and GIS operations with input.json based configuration as defined in the GitHub repo.',
-        'de': 'Führt GIS-Operationen durch, gesteuert über input.json wie im GitHub-Repository definiert.'
+        'en': 'Runs Whitebox GIS operations like hillslope generation or terrain analysis.',
+        'de': 'Führt Whitebox GIS-Operationen wie Hangauswertung oder Terrainanalyse durch.'
     },
-    'keywords': ['whitebox', 'gis', 'input.json', 'terrain', 'merge'],
+    'keywords': ['whitebox', 'gis', 'raster', 'terrain', 'hydrology'],
     'links': [{
         'type': 'text/html',
         'rel': 'about',
@@ -24,65 +24,63 @@ PROCESS_METADATA = {
         'hreflang': 'en-US'
     }],
     'inputs': {
-        'input_json': {
-            'title': 'Input JSON Configuration',
-            'description': 'Full JSON object matching the structure used in the GitHub test folder (whitebox_info, merge_tifs, etc.)',
+        'raster_file': {
+            'title': 'Input raster file path',
+            'description': 'Path to the input DEM GeoTIFF file.',
             'schema': {
-                'type': 'object'
+                'type': 'string',
+                'example': '/in/dem.tif'
             }
         },
-        'raster_files': {
-            'title': 'Raster files',
-            'description': 'List of input raster (GeoTIFF) file paths to be copied into /in folder.',
+        'tool_name': {
+            'title': 'Whitebox Tool Name',
+            'description': 'Tool to run inside the container (e.g., "hillslope_generator")',
             'schema': {
-                'type': 'array',
-                'items': {'type': 'string'}
+                'type': 'string',
+                'default': 'hillslope_generator',
+                'example': 'hillslope_generator'
+            }
+        },
+        'stream_threshold': {
+            'title': 'Stream Threshold',
+            'description': 'Threshold value for stream extraction',
+            'schema': {
+                'type': 'number',
+                'default': 100.0,
+                'example': 100.0
+            }
+        },
+        'to_file': {
+            'title': 'Write Output to File',
+            'description': 'Whether the tool should save output to file',
+            'schema': {
+                'type': 'boolean',
+                'default': True,
+                'example': True
             }
         }
     },
     'outputs': {
         'result': {
             'title': 'Output directory',
-            'description': 'Directory with result files',
+            'description': 'Directory with output files',
             'schema': {
                 'type': 'object',
-                'contentMediaType': 'application/json'
+                'contentMediaType': 'application/json',
+                
             },
-            'example': {
-                'value': 'completed',
-                'container_status': 'exited'
-            }
+        'example': {
+            'value': 'completed',
+            'container_status': 'exited'
+        }
         }
     },
     'example': {
         'inputs': {
-            'input_json': {
-                "whitebox_info": {
-                    "parameters": {
-                        "toFile": True
-                    }
-                },
-                "merge_tifs": {
-                    "parameters": {
-                        "method": "nn"
-                    },
-                    "data": {
-                        "in_file": "/in"
-                    }
-                },
-                "hillslope_generator": {
-                    "parameters": {
-                        "stream_threshold": 100
-                    },
-                    "data": {
-                        "dem": "/in/dem.tif"
-                    }
-                }
-            },
-            "raster_files": [
-                "/data/geoapi_data/in/testuser/testwhitebox/elevation1.tif",
-                "/data/geoapi_data/in/testuser/testwhitebox/elevation2.tif"
-            ]
+            'tool_name': 'hillslope_generator',
+            'raster_file': '/in/dem.tif',
+            'stream_threshold': 100.0,
+            'to_file': True
         }
     }
 }
@@ -94,58 +92,108 @@ class WhiteboxGISProcessor(BaseProcessor):
 
     def execute(self, data, path=None):
         mimetype = 'application/json'
+        # path = f'whitebox_{os.urandom(5).hex()}'
         if path is None:
             path = f'whitebox_{os.urandom(5).hex()}'
         user = data.get('User-Info', 'default')
 
-        input_json = data.get('input_json')
-        raster_files = data.get('raster_files', [])
+        raster_path = data.get('raster_file')
+        tool_name = data.get('tool_name', 'hillslope_generator')
+        stream_threshold = data.get('stream_threshold', 100.0)
+        to_file = data.get('to_file', True)
 
-        if not input_json:
-            raise ValueError("Missing 'input_json' configuration.")
-        if not raster_files or not isinstance(raster_files, list):
-            raise ValueError("Missing or invalid 'raster_files' input.")
+        if not raster_path:
+            raise ValueError("Missing required 'raster_file'")
 
         secrets = PodmanProcessor.get_secrets()
         host_path_in = f'{secrets["GEOAPI_PATH"]}/in/{user}/{path}'
         host_path_out = f'{secrets["GEOAPI_PATH"]}/out/{user}/{path}'
         server_path_out = f'{secrets["DATA_PATH"]}/out/{user}/{path}'
+        server_path_in = f'{secrets["DATA_PATH"]}/in/{user}/{path}'
+
+
+       # Use container paths directly to avoid mounting mismatch
+#        host_path_in = f'/home/geoapi/in/{user}/{path}'
+#        host_path_out = f'/home/geoapi/out/{user}/{path}'
+#        server_path_out = f'/data/geoapi_data/out/{user}/{path}'
 
         os.makedirs(host_path_in, exist_ok=True)
         os.makedirs(host_path_out, exist_ok=True)
+        os.makedirs(server_path_out, exist_ok=True)
+        os.makedirs(server_path_in, exist_ok=True)
+
+#        input_dict = {
+#            "tool_name": tool_name,
+#            "parameters": {
+#                "stream_threshold": stream_threshold,
+#                "toFile": to_file
+#            }
+#        }
+
+
+
+        input_dict = {
+            tool_name: {
+                "parameters": {
+                    "stream_threshold": stream_threshold,
+                    "toFile": to_file
+                },
+                "data": {
+                    "dem": "/in/dem.tif"
+                }
+            }
+        }
 
         try:
             with open(f'{host_path_in}/input.json', 'w') as f:
-                json.dump(input_json, f, indent=4)
-
-            # Copy all raster files into /in folder
-            for raster_file in raster_files:
-                base = os.path.basename(raster_file)
-                target_path = os.path.join(host_path_in, base)
-                os.system(f'cp "{raster_file}" "{target_path}"')
+                json.dump(input_dict, f, indent=4)
+#            os.system(f'cp "{raster_path}" "{host_path_in}/dem.tif"')
+            target_raster_path = os.path.join(host_path_in, "dem.tif")
+            os.system(f'cp "{raster_path}" "{target_raster_path}"')
 
         except Exception as e:
             raise RuntimeError(f"Error preparing input files: {e}")
 
-        image_name = 'ghcr.io/vforwater/tbr_whitebox:v0.9.2'
+        print("Host input dir exists:", os.path.exists(host_path_in))
+        print("Host input dir content:", os.listdir(host_path_in))
+        image_name = 'ghcr.io/vforwater/tbr_whitebox:v0.9.1'
         container_name = f'whiteboxgis_tool_{os.urandom(5).hex()}'
         container_in = '/in'
         container_out = '/out'
+#        container_in = f'/data/geoapi_data/in/{user}/{path}'
+#        container_out = f'/data/geoapi_data/out/{user}/{path}'
+        # mounts = [
+        #     {'type': 'bind', 'source': f'/data/geoapi_data/in/{user}/{path}', 'target': container_in, 'read_only': True},
+        #     {'type': 'bind', 'source': f'/data/geoapi_data/out/{user}/{path}', 'target': container_out}
+        # ]
 
         mounts = [
-            {'type': 'bind', 'source': host_path_in, 'target': container_in, 'read_only': True},
-            {'type': 'bind', 'source': host_path_out, 'target': container_out}
+            {'type': 'bind', 'source': server_path_in, 'target': container_in, 'read_only': True},
+            {'type': 'bind', 'source': server_path_out, 'target': container_out}
         ]
+#        mounts = [
+#    {'type': 'bind', 'source': f'/data/geoapi_data/in/{user}/{path}', 'target': f'/home/geoapi/in/{user}/{path}', 'read_only': True},
+#    {'type': 'bind', 'source': f'/data/geoapi_data/out/{user}/{path}', 'target': f'/home/geoapi/out/{user}/{path}'}
+#]
 
-        environment = {}
+#        volumes = {
+#            host_path_in: {'bind': container_in, 'mode': 'rw'},
+#            host_path_out: {'bind': container_out, 'mode': 'rw'}
+#        }
+
+        environment = {'TOOL_RUN': tool_name}
+        network_mode = 'host'
         command = ["python", "/src/run.py"]
+
         error = 'none'
         try:
             client = PodmanProcessor.connect(secrets['PODMAN_URI'])
             container = PodmanProcessor.pull_run_image(
                 client=client, image_name=image_name,
                 container_name=container_name, environment=environment,
-                mounts=mounts, network_mode='host', command=command)
+                mounts=mounts, network_mode=network_mode,
+#                volumes=volumes, 
+                command=command)
         except Exception as e:
             logging.error(f'Error running Podman: {e}')
             error = str(e)
