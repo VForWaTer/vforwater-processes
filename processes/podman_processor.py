@@ -27,16 +27,20 @@ class PodmanProcessor():
     def pull_run_image(client, image_name, container_name, environment=None, mounts=None, network_mode=None,
                        volumes=None, command=None):
         secrets = PodmanProcessor.get_secrets()
-        # Log available Docker image
-        logging.info(f"client.images.list() {client.images.list()}")
-        logging.info("The following images are available: ")
-        for i in client.images.list():
-            logging.info(f"Image ID: {i.id}, image name: {i.tags}") #{i.name}
 
-        # Pull the Docker image
-        print("image: ", client.images.list(filters={"reference": image_name}))
-        filters = {"reference": image_name}
-        logging.info(f"image: {client.images.list(filters=filters)}")
+        # Log available images (debug only) — guard so it never breaks runtime
+        try:
+            if hasattr(client, "images") and hasattr(client.images, "list"):
+                logging.info(f"client.images.list() {client.images.list()}")
+                logging.info("The following images are available: ")
+                for i in client.images.list():
+                    logging.info(f"Image ID: {i.id}, image name: {i.tags}")
+            else:
+                logging.warning(f"Client type has no images.list(): {type(client)}")
+        except Exception as e:
+            logging.warning(f"Skipping image listing (non-fatal): {e}")
+
+
         if not client.images.list(filters={"reference": image_name}):
             print(f"Pulling Podman image: {image_name}")
             logging.info(f"Pulling Podman image: {image_name}")
