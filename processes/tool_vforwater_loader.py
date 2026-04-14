@@ -41,7 +41,7 @@ from podman import PodmanClient
 
 #: Process metadata and description
 PROCESS_METADATA = {
-    'version': '0.13.0',
+    'version': '0.15.4',
     'id': 'vforwater_loader',
     'title': {
         'en': 'Dataset Loader',
@@ -197,10 +197,11 @@ class VforwaterLoaderProcessor(BaseProcessor):
         """
         super().__init__(processor_def, PROCESS_METADATA)
 
-    def execute(self, data):
+    def execute(self, data, path=None):
         mimetype = 'application/json'
-        path = f'vfw_loader_{os.urandom(5).hex()}'
-
+        #path = f'vfw_loader_{os.urandom(5).hex()}'
+        if path is None:
+            path = f'vfw_loader_{os.urandom(5).hex()}'
         # load all images (podman images!)   Not used yet. Maybe for a latter implementation of tools
         # might still use docker. Fix geoprocessapi
         # images = get_remote_image_list()
@@ -250,8 +251,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
                 "parameters": {
                     # "integration": integration,
                     "dataset_ids": dataset_ids,
-                    "start_date": start_date,
-                    "end_date": end_date,
+#                    "start_date": start_date,
+#                    "end_date": end_date,
                     "reference_area": reference_area,
                     "cell_touches": cell_touches
                 }
@@ -271,6 +272,9 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # host_path_in = f'/home/geoapi/in/{user}/{path}'  # path in container (mounted in '/data/geoapi' auf server)
         # host_path_out = f'/home/geoapi/out/{user}/{path}'  # was out_dir
 
+        os.makedirs(host_path_in, exist_ok=True)
+        os.makedirs(host_path_out, exist_ok=True)
+
         if not os.path.exists(host_path_in):
             os.makedirs(host_path_in)
             logging.debug(f'Created input directory at: {host_path_in}')
@@ -289,7 +293,8 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # image_name = 'vfwregistry:5000/demo/tool_vforwater_loader:0.1'
         # image_name = 'tool_vforwater_loader:latest' # TODO: used for test; still valid?
         # image_name = 'tool_vforwater_loader:latest'
-        image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:v0.13.0'
+#        image_name = 'tbr_vforwater_loader:dev1'
+        image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:v0.15.5'
         container_name = f'tool_vforwater_loader_{os.urandom(5).hex()}'
 
         container_in = '/in'
