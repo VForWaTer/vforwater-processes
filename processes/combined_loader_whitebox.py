@@ -55,9 +55,15 @@ PROCESS_METADATA = {
             'minOccurs': 1,
             'maxOccurs': 1
         },
-        'stream_threshold': {
-            'title': 'Stream Threshold',
-            'schema': {'type': 'number', 'default': 100.0},
+        'stream_threshold_low': {
+            'title': 'Stream Threshold Low',
+            'schema': {'type': 'number', 'default': 10000.0},
+            'minOccurs': 0,
+            'maxOccurs': 1
+        },
+        'stream_threshold_high': {
+            'title': 'Stream Threshold High',
+            'schema': {'type': 'number', 'default': 20000.0},
             'minOccurs': 0,
             'maxOccurs': 1
         },
@@ -68,6 +74,31 @@ PROCESS_METADATA = {
             'maxOccurs': 1
         },
 
+        'target_epsg': {
+            'title': 'Target EPSG (metric)',
+            'schema': {'type': 'integer', 'default': 25832},
+            'minOccurs': 0,
+            'maxOccurs': 1
+        },
+
+        'cell_size': {
+            'title': 'Cell size (m)',
+            'schema': {'type': 'number', 'default': 30.0},
+            'minOccurs': 0,
+            'maxOccurs': 1
+        },
+        'resampling': {
+            'title': 'Resampling',
+            'schema': {'type': 'string', 'enum': ['nearest', 'bilinear', 'cubic'], 'default': 'bilinear'},
+            'minOccurs': 0,
+            'maxOccurs': 1
+        },
+        'source_epsg': {
+            'title': 'Source EPSG (optional)',
+            'schema': {'type': 'integer', 'default': 4326},
+            'minOccurs': 0,
+            'maxOccurs': 1
+        },
         'hillslope_id': {'title': 'Hillslope ID', 'schema': {'type': 'integer', 'default': -1}},
         'no_flow_area': {'title': 'No Flow Area', 'schema': {'type': 'number', 'default': 0.30}},
         'min_cells': {'title': 'Minimum Cells', 'schema': {'type': 'integer', 'default': 10}},
@@ -141,22 +172,31 @@ class CombinedLoaderWhiteboxProcessor(BaseProcessor):
         os.makedirs(host_in_path, exist_ok=True)
         os.makedirs(host_out_path, exist_ok=True)
 
-
+        def run_path(*parts: str) -> str:
+            # allows paths like: combined_x/whitebox/merge
+            return "/".join([shared_id, *[p for p in parts if p]])
+        
         loader = VforwaterLoaderProcessor({"name": "vforwater_loader"})
-        _, loader_output = loader.execute(data, path=shared_id)
+        _, loader_output = loader.execute(data, path=run_path("loader"))
         if isinstance(loader_output, str):
             loader_output = json.loads(loader_output)
 
+        logging.info("📤 loader_output path: %s", loader_output)
+        print("📤 loader_output path: %s", loader_output)
+        loader_out_dir_server = loader_output.get("dir")  # DATA_PATH/out/<user>/<run_id>/loader
+        if not loader_out_dir_server:
+            raise RuntimeError("Loader returned no output dir")
+        
+        logging.info("📤 loader_out_dir_server path: %s", loader_out_dir_server)
+        print("📤 loader_out_dir_server path: %s", loader_out_dir_server)   
 
-        logging.info("📥 Using input path: %s", host_in_path)
-        print("📥 Using input path: %s", host_in_path)
-        logging.info("📤 Using output path: %s", host_out_path)
-        print("📤 Using output path: %s", host_out_path)
 
-        logging.info("📥 Using server input path: %s", server_path_in)
-        print("📥 Using server input path: %s", server_path_in)
-        logging.info("📤 Using server output path: %s", server_path_out)
-        print("📤 Using server output path: %s", server_path_out)
+        # loader_out_dir_host for local filesystem operations (if needed)
+        loader_out_dir_host = loader_out_dir_server.replace(secrets["DATA_PATH"], secrets["GEOAPI_PATH"])
+
+        expected_raster_folder_host = os.path.join(
+            loader_out_dir_host, "datasets", "elevation_1100"
+        )
 
 
         expected_raster_folder = os.path.join(loader_output.get("dir"), 'datasets', 'elevation_1100')
@@ -164,7 +204,7 @@ class CombinedLoaderWhiteboxProcessor(BaseProcessor):
         # /data/geoapi_data/out/user1580_safa/testfolder/datasets/elevation_1100
         print("📤 Using expected_raster_folder path: %s", expected_raster_folder)
 
-        expected_raster_folder_host = os.path.join(host_out_path, 'datasets', 'elevation_1100')
+        # expected_raster_folder_host = os.path.join(host_out_path, 'datasets', 'elevation_1100')
         logging.info("📤 Using expected_raster_folder path: %s", expected_raster_folder_host)
         #/home/geoapi/out/user1580_safa/testfolder/datasets/elevation_1100
         print("📤 Using expected_raster_folder path: %s", expected_raster_folder_host)
@@ -184,159 +224,249 @@ class CombinedLoaderWhiteboxProcessor(BaseProcessor):
 
         # for tif in raster_candidates:
         #     shutil.copy(tif, host_in_path)
-        raster_candidates = glob.glob(os.path.join(expected_raster_folder, '*.tif'))
-        logging.info("✅ to copy %d data to %s", len(raster_candidates), host_in_path)
-        # copied 0 to /home/geoapi/in/user1580_safa/testfolder
-        print("✅ to copy %d data to %s", len(raster_candidates), host_in_path)
+        # Poll until the loader’s rasters become visible (race-proof)
+
+
+
+
+
+
+        timeout_s = 30
+        interval_s = 0.5
+        elapsed = 0.0
+
+        raster_candidates = []
+        while elapsed < timeout_s:
+            if os.path.isdir(expected_raster_folder_host):
+                raster_candidates = glob.glob(os.path.join(expected_raster_folder_host, '*.tif'))
+                if raster_candidates:
+                    break
+            time.sleep(interval_s)
+            elapsed += interval_s
+
+        logging.info("🕒 Waited %.1fs for rasters; found %d file(s) in %s",
+                    elapsed, len(raster_candidates), expected_raster_folder_host)
+
+        if not raster_candidates:
+            # Extra diagnostics to help if it happens again
+            parent = os.path.dirname(expected_raster_folder_host)
+            listing = os.listdir(parent) if os.path.isdir(parent) else "<parent missing>"
+            raise RuntimeError(f"No raster .tif files found in {expected_raster_folder_host} "
+                            f"(parent contents: {listing})")
+
+        # (Optional) small settle delay
+        time.sleep(0.2)
+
+        # --- Prepare WHITEBOX input folder (whitebox/in) ---
+        whitebox_in_host = f'{secrets["GEOAPI_PATH"]}/in/{user_folder}/{run_path("whitebox")}'
+        os.makedirs(whitebox_in_host, exist_ok=True)
 
         for tif in raster_candidates:
-            shutil.copy(tif, host_in_path)
-        #    if len( os.listdir(raster_candidates)) == 1            
-         #       hillslop_in = shutil.copy(tif,  os.path.join(host_in_path, 'dem.tif')
-        #logging.info(f" hillslop input %s", hillslop_in)
-        
-        # logging.info("✅ Copied %d rasters to %s", len(raster_candidates), host_in_path)
-        logging.info("✅ Copied %d data to %s", len(raster_candidates), host_in_path)
+            shutil.copy2(tif, whitebox_in_host)
+
+        logging.info("✅ Copied %d raster(s) into whitebox input: %s", len(raster_candidates), whitebox_in_host)
 
         whitebox = WhiteboxGISProcessorV092({"name": "tool_whiteboxgis_v_0_9_2"})
 
-        merge_input = {
-            'tool_name': 'merge_tifs',
-            'raster_file': expected_raster_folder_host,
-            'method': data.get('method', 'nn'),
+
+        # Decide merge-or-skip based on number of TIFFs from the loader
+        if len(raster_candidates) == 0:
+            raise RuntimeError(f"No raster .tif files found in {expected_raster_folder}")
+
+        # Decide merge-or-skip
+        if len(raster_candidates) == 1:
+            dem_host_path = os.path.join(whitebox_in_host, os.path.basename(raster_candidates[0]))
+            logging.info("Single DEM detected; skipping merge. Using: %s", dem_host_path)
+            merge_output = {
+                "dir": f'{secrets["DATA_PATH"]}/out/{user_folder}/{run_path("whitebox")}',
+                "tool_logs": "merge skipped (only one input)",
+                "container_status": "skipped",
+                "value": "skipped",
+                "error": "none",
+            }
+        else:
+            # merge reads from folder of tifs
+            logging.info("whitebox_in_host: %s", whitebox_in_host)
+            merge_input = {
+                "tool_name": "merge_tifs",
+                "raster_file": whitebox_in_host,  # host folder containing .tif
+                "method": data.get("method", "nn"),
+                "to_file": True,
+                "User-Info": user_folder,
+            }
+            _, merge_output = whitebox.execute(merge_input, path=run_path("whitebox", "merge"))
+
+            # merged DEM ends up as dem.tif in WHITEBOX merge out folder
+            merge_out_host = merge_output["dir"].replace(secrets["DATA_PATH"], secrets["GEOAPI_PATH"])
+            logging.info("merge_out_host: %s", merge_out_host)
+
+            dem_host_path = os.path.join(merge_out_host, "dem.tif")
+            logging.info("dem_host_path: %s", dem_host_path)
+
+
+
+        target_epsg = int(data.get('target_epsg', 25832))
+        cell_size = float(data.get('cell_size', 30.0))
+        resampling = str(data.get('resampling', 'bilinear'))
+        source_epsg = int(data.get('source_epsg', 4326))
+
+        reproject_input = {
+            'tool_name': 'reproject_to_metric',
+            'raster_file': dem_host_path,   # merged DEM (host path)
+            'target_epsg': target_epsg,
+            'cell_size': cell_size,
+            'resampling': resampling,
+            'source_epsg': source_epsg,
             'to_file': True,
             'User-Info': user_folder
         }
 
-        _, merge_output = whitebox.execute(merge_input, path=shared_id)
-        logging.info(f"🔍 merge_output dir: {merge_output['dir']}")
-        # INFO - 🔍 merge_output dir: /data/geoapi_data/out/user1580_safa/testfolder
-        dem_path = os.path.join(merge_output['dir'], 'dem.tif')
+        _, reproject_output = whitebox.execute(reproject_input, path=run_path("whitebox", "reproject"))
+        logging.info(f"🗺 reproject_output dir: {reproject_output['dir']}")
 
+        reproject_out_host = reproject_output["dir"].replace(secrets["DATA_PATH"], secrets["GEOAPI_PATH"])
+        dem_reprojected_host = os.path.join(reproject_out_host, "dem_reprojected.tif")
+        logging.info(f"🗺 reproject_out_host dir: {reproject_out_host}")
+        logging.info(f"🗺 dem_reprojected_host dir: {dem_reprojected_host}")
 
+        # --- Hillslope (WHITEBOX/hillslope) ---
+        # hillslope_input = {
+        #     "tool_name": "hillslope_generator",
+        #     "raster_file": dem_reprojected_host,
+        #     "stream_threshold": float(data.get("stream_threshold", 10000.0)),
+        #     "to_file": data.get("to_file", True),
+        #     "User-Info": user_folder,
+        # }
+        # _, hillslope_output = whitebox.execute(hillslope_input, path=run_path("whitebox", "hillslope"))
 
-        #if not os.path.exists(dem_path):
-        #    raise RuntimeError(f"❌ Merged DEM not found at: {dem_path}")
-        dem_container_dir = merge_output['dir']
-        logging.info(f"🔍 dem_container_dir: {dem_container_dir}")
-        # INFO - 🔍 dem_container_dir: /data/geoapi_data/out/user1580_safa/testfolder
-
-        dem_host_dir = dem_container_dir.replace('/data/geoapi_data', '/home/geoapi')
-        logging.info(f"🔍 dem_host_dir: {dem_host_dir}")
-        #INFO - 🔍 dem_host_dir: /home/geoapi/out/user1580_safa/testfolder
-        # expected_dem_dir = dem_container_dir.replace( '/data/geoapi_data', '/home/geoapi')
-        expected_dem_file =  os.path.join(dem_host_dir, 'dem.tif')
-#        expected_dem_file =  os.path.join(dem_host_dir, 'elevation_1100_part_1.tif')
-
-
-        logging.info(f"🔍 expected_dem_dir: {dem_host_dir}")
-
-        #expected_dem_file_in =  shutil.copy(expected_dem_file, host_in_path)
-        #logging.info(f"🔍 expected_dem_file_in: {expected_dem_file_in}")
-
-        logging.info(f"🔍 expected_dem_file: {expected_dem_file}")
-
-        # dem_path = os.path.join(dem_host_dir, 'dem.tif')
-        # logging.info(f"🔍 dem_path: {dem_path}")
-        # INFO - 🔍 dem_path: /data/geoapi_data/out/user1580_safa/testfolder/merged.tif
-
-#        logging.info(f"🔍  merge_output['dir'] after merge: {os.listdir(merge_output['dir'])}")
- #       raster_candidates_merged = glob.glob(os.path.join(merge_output['dir'], '*.tif'))
- #       logging.info("✅ to copy %d data to %s", len(raster_candidates_merged),raster_candidates_merged, host_in_path)
-        logging.info("📤 Using expected_raster_folder_host  path.. input of merge: %s", expected_raster_folder_host)
-#        logging.info(f"🔍  merge_output['dir'] after merge: {os.listdir('/data/geoapi_data/in/user1580_safa/combined_194e56925a')}")
-
-        hillslope_input = {
-            'tool_name': 'hillslope_generator',
-            'raster_file': expected_dem_file,
-            'stream_threshold': float(data.get('stream_threshold', 100.0)),
-            'to_file': data.get('to_file', True),
-            'User-Info': user_folder
+        # --- Hillslope run #1 (LOW threshold) ---
+        hillslope_low_input = {
+            "tool_name": "hillslope_generator",
+            "raster_file": dem_reprojected_host,
+            "stream_threshold": float(data.get("stream_threshold_low")),  # <-- low
+            "to_file": True,
+            "User-Info": user_folder,
         }
+        _, hillslope_low_output = whitebox.execute(
+            hillslope_low_input,
+            path=run_path("whitebox", "hillslope_low")
+        )
 
-        _, hillslope_output = whitebox.execute(hillslope_input, path=shared_id)
-
-
-
-
-        # Run Catflow tool with hillslope output directory as input
-        #catflow = CatflowProcessor({"name": "tool_catflow_v_0_1"})
-
-        catlflow_host_dir = hillslope_output['dir'].replace('/data/geoapi_data', '/home/geoapi')
-        logging.info("📤 Using catlflow_host_dir input  path..: %s", catlflow_host_dir)
-
-
-
-        # Validate and rename files for Catflow
-        expected_files = {
-            'flow_accumulation.tif', 'hillslopes.tif', 'elevation.tif', 'distance.tif',
-            'fill_DEM.tif', 'aspect.tif', 'streams.tif'
+        # --- Hillslope run #2 (HIGH threshold) ---
+        hillslope_high_input = {
+            "tool_name": "hillslope_generator",
+            "raster_file": dem_reprojected_host,
+            "stream_threshold": float(data.get("stream_threshold_high")),  # <-- high
+            "to_file": True,
+            "User-Info": user_folder,
         }
-#        available_files = set(os.listdir(hillslope_output['dir']))
-#        logging.info("📤 check available_files for catflow input  path..: %s", available_files)
-        logging.info("📤 check expected_files for catflow input  path..: %s", expected_files)
+        _, hillslope_high_output = whitebox.execute(
+            hillslope_high_input,
+            path=run_path("whitebox", "hillslope_high")
+        )
 
-#        missing = expected_files - available_files
-#        if missing:
-#            raise RuntimeError(f"Missing files for Catflow: {', '.join(missing)}")
+        catflow_in_host = f'{secrets["GEOAPI_PATH"]}/in/{user_folder}/{run_path("catflow")}'
+        os.makedirs(catflow_in_host, exist_ok=True)
 
-        # Run Catflow
+        low_out_host  = hillslope_low_output["dir"].replace(secrets["DATA_PATH"], secrets["GEOAPI_PATH"])
+        high_out_host = hillslope_high_output["dir"].replace(secrets["DATA_PATH"], secrets["GEOAPI_PATH"])
+
+        # Copy ALL .tif files from LOW run into catflow input
+        for src in glob.glob(os.path.join(low_out_host, "*.tif")):
+            shutil.copy2(src, os.path.join(catflow_in_host, os.path.basename(src)))
+
+        # Overwrite hillslopes.tif from HIGH run
+        high_hills = os.path.join(high_out_host, "hillslopes.tif")
+        if not os.path.isfile(high_hills):
+            raise RuntimeError(f"Expected hillslopes.tif not found in {high_out_host}")
+        shutil.copy2(high_hills, os.path.join(catflow_in_host, "hillslopes.tif"))
+
+
+        # --- CATFLOW in its own folder ---
+        # catflow_in_host = hillslope_output["dir"].replace(secrets["DATA_PATH"], secrets["GEOAPI_PATH"])
+        logging.info(f"🗺 catflow_in_host dir: {catflow_in_host}")
+
         catflow = CatflowProcessor({"name": "tool_catflow_v_0_1"})
         catflow_input = {
-            'input_dir': catlflow_host_dir,
-            'hillslope_id': data.get('hillslope_id', -1),
-            'no_flow_area': data.get('no_flow_area', 0.30),
-            'min_cells': data.get('min_cells', 10),
-            'hill_type': data.get('hill_type', 'constant'),
-            'depth': data.get('depth', 2.1),
-            'User-Info': user_folder
+            "input_dir": catflow_in_host,
+            "hillslope_id": data.get("hillslope_id", -1),
+            "no_flow_area": data.get("no_flow_area", 0.30),
+            "min_cells": data.get("min_cells", 10),
+            "hill_type": data.get("hill_type", "constant"),
+            "depth": data.get("depth", 2.1),
+            "User-Info": user_folder,
         }
-        _, catflow_output = catflow.execute(catflow_input, path=shared_id)
+        _, catflow_output = catflow.execute(catflow_input, path=run_path("catflow","run"))
+
+
+
+
+
+        logging.info("📤 catflow_output : %s", catflow_output)
+        # --- Collect plot files and split PDFs vs images ---
+
+        plots_pdfs = []
+        preview_images = []
+
+        # shared OUT root (HOST path) -> used to build relative paths for the portal
+        shared_out_host = f'{secrets["GEOAPI_PATH"]}/out/{user_folder}/{shared_id}'
+
+        # catflow run dir (HOST path) -> where plots are actually created
+        catflow_run_host = catflow_output['dir'].replace(secrets["DATA_PATH"], secrets["GEOAPI_PATH"])
+        plots_dir_host = os.path.join(catflow_run_host, 'plots')
+
+        if os.path.isdir(plots_dir_host):
+            for fname in sorted(os.listdir(plots_dir_host)):
+                full = os.path.join(plots_dir_host, fname)
+                if not os.path.isfile(full):
+                    continue
+
+                # IMPORTANT: path must be relative to shared_out_host because you return dir=shared_out_dir
+                rel = os.path.relpath(full, shared_out_host).replace("\\", "/")
+                lower = fname.lower()
+
+                if lower.endswith('.pdf'):
+                    plots_pdfs.append(rel)
+                elif lower.endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg')):
+                    preview_images.append(rel)
+        else:
+            logging.info("ℹ No plots directory found at: %s", plots_dir_host)
 
         return mimetype, {
+            "name" : "DEM2CAT",
             'container_status': catflow_output.get('container_status'),
             'value': catflow_output.get('value'),
-            'dir': catflow_output.get('dir'),
+            'dir': server_path_out,
             'shared_dir': shared_id,
+
             'loader_output_dir': loader_output.get('dir'),
+            "whitebox_dir": f'{secrets["DATA_PATH"]}/out/{user_folder}/{run_path("whitebox")}',
+            "catflow_dir": catflow_output.get("dir"),
+
             'merge_output_dir': merge_output.get('dir'),
+            'reproject_output_dir': reproject_output.get('dir') if len(raster_candidates) > 1 else None,
+
+            "hillslope_low_output_dir": hillslope_low_output.get("dir"),
+            "hillslope_high_output_dir": hillslope_high_output.get("dir"),
+
             'whitebox_logs_merge': merge_output.get('tool_logs', 'n/a'),
-            'whitebox_logs_hillslope': hillslope_output.get('tool_logs', 'n/a'),
+            'whitebox_logs_reproject': reproject_output.get('tool_logs', 'n/a') if len(raster_candidates) > 1 else 'n/a',
+
+            "whitebox_logs_hillslope_low": hillslope_low_output.get("tool_logs", "n/a"),
+            "whitebox_logs_hillslope_high": hillslope_high_output.get("tool_logs", "n/a"),
+
             'catflow_logs': catflow_output.get('tool_logs', 'n/a'),
-            'plots': catflow_output.get('plots', []),
+       
+            "stream_threshold_low": float(data.get("stream_threshold_low")),
+            "stream_threshold_high": float(data.get("stream_threshold_high")),
+
+            'plots': plots_pdfs,
 #            'preview_images': catflow_output.get('preview_images', []),
-            'preview_images':  ["./test_preview-1.png" ],
+            'preview_images': preview_images,
+
             'error': catflow_output.get('error'),
-            'name': 'DEM2CAT'
         }
 
-
-#        return mimetype, {
-#            'container_status': hillslope_output.get('container_status'),
-#            'value': hillslope_output.get('value'),
-#            'dir': hillslope_output.get('dir'),
-#            'shared_dir': shared_id,
-#            'loader_output_dir': loader_output.get('dir'),
-#            'merge_output_dir': merge_output.get('dir'),
-#            'whitebox_logs_merge': merge_output.get('tool_logs', 'n/a'),
-#            'whitebox_logs_hillslope': hillslope_output.get('tool_logs', 'n/a'),
-#            'error': hillslope_output.get('error'),
-#            'name': 'combined_loader_whitebox'
-#        }
-    
-        # return mimetype, {
-        #     'container_status': merge_output.get('container_status'),
-        #     'value': merge_output.get('value'),
-        #     'dir': merge_output.get('dir'),
-        #     'shared_dir': shared_id,
-        #     'loader_output_dir': loader_output.get('dir'),
-        #     'merge_output_dir': merge_output.get('dir'),
-        #     'whitebox_logs_merge': merge_output.get('tool_logs', 'n/a'),
-        #     # 'whitebox_logs_hillslope': hillslope_output.get('tool_logs', 'n/a'),
-        #     'error_merge': merge_output.get('error'),
-        #     # 'error_hillslope': hillslope_output.get('error'),
-        #     'name': 'combined_loader_whitebox'
-        # }
 
     def __repr__(self):
         return '<CombinedLoaderWhiteboxProcessor>'
