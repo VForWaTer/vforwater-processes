@@ -27,8 +27,8 @@ PROCESS_METADATA = {
         'de': 'Catflow Werkzeug'
     },
     'description': {
-        'en': 'Executes the make_representative_hillslope process of the Catflow hydrological model.',
-        'de': 'Führt den Prozess make_representative_hillslope des hydrologischen Modells Catflow aus.'
+        'en': 'EExecutes the make_representative_hillslope process of the Catflow hydrological model. Supports optional soil raster.',
+        'de': 'Führt den Prozess make_representative_hillslope des hydrologischen Modells Catflow aus. Unterstützt optionalen Boden-Raster.'
     },
     'keywords': ['catflow', 'hydrology', 'representative hillslope', 'raster', 'watershed'],
     'links': [{
@@ -90,9 +90,12 @@ class CatflowProcessor(BaseProcessor):
         host_path_in = f'{secrets["GEOAPI_PATH"]}/in/{user}/{path}'
         host_path_out = f'{secrets["GEOAPI_PATH"]}/out/{user}/{path}'
         server_path_out = f'{secrets["DATA_PATH"]}/out/{user}/{path}'
+        server_path_in = f'{secrets["DATA_PATH"]}/in/{user}/{path}'
 
         os.makedirs(host_path_in, exist_ok=True)
         os.makedirs(host_path_out, exist_ok=True)
+        os.makedirs(server_path_in, exist_ok=True)
+        os.makedirs(server_path_out, exist_ok=True)
 
         logging.info(f"📤 Catflow input directory: {input_dir}")
 
@@ -103,6 +106,10 @@ class CatflowProcessor(BaseProcessor):
         hill_type = data.get('hill_type', 'constant')
         depth = data.get('depth', 2.1)
 
+        min_area = data.get('min_area', 10000)         # m²
+        freedom = data.get('freedom', 10)              # spline DoF
+        constant_width = data.get('constant_width', True)
+
         # Assemble expected input file paths
         file_map = {
             'flow_accumulation': 'flow_accumulation.tif',
@@ -111,9 +118,10 @@ class CatflowProcessor(BaseProcessor):
             'dist2river': 'distance.tif',
             'filled_dem': 'fill_DEM.tif',
             'aspect': 'aspect.tif',
-            'river_id': 'streams.tif'
+            'river_id': 'streams.tif',
+            # optional:
+            'soil': 'soils.tif'
         }
-
         input_data_paths = {k: os.path.join('/in', v) for k, v in file_map.items()}
 
         input_dict = {
@@ -123,9 +131,12 @@ class CatflowProcessor(BaseProcessor):
                     "no_flow_area": no_flow_area,
                     "min_cells": min_cells,
                     "hill_type": hill_type,
-                    "depth": depth
+                    "depth": depth,
+                    "min_area": min_area,
+                    "freedom": freedom,
+                    "constant_width": constant_width
                 },
-                "data": input_data_paths
+                "data": {k: v for k, v in input_data_paths.items() if k != 'soil'}
             },
             "define_run_printouts": {
                 "parameters": {
@@ -143,6 +154,11 @@ class CatflowProcessor(BaseProcessor):
             }
         }
 
+        # If optional soil file exists in the provided input folder, add it to JSON
+        soil_src = os.path.join(input_dir, file_map['soil'])
+        if os.path.exists(soil_src):
+            input_dict["make_representative_hillslope"]["data"]["soil"] = input_data_paths['soil']
+
 #        secrets = PodmanProcessor.get_secrets()
 #        host_path_in = f'{secrets["GEOAPI_PATH"]}/in/{user}/{path}'
 #        host_path_out = f'{secrets["GEOAPI_PATH"]}/out/{user}/{path}'
@@ -151,13 +167,19 @@ class CatflowProcessor(BaseProcessor):
 #        os.makedirs(host_path_in, exist_ok=True)
 #        os.makedirs(host_path_out, exist_ok=True)
 
-        # Copy all required files to input dir
-        for src_name in file_map.values():
+
+
+        # Copy all required files to input dir (skip optional soil if absent)
+        for key, src_name in file_map.items():
             src_path = os.path.join(input_dir, src_name)
             dst_path = os.path.join(host_path_in, src_name)
+            if (key == 'soil') and (not os.path.exists(src_path)):
+                logging.info("ℹ Optional soil raster not found, skipping: %s", src_path)
+                continue
             shutil.copy(src_path, dst_path)
 
-        # Also copy rep_hill.geo if exists
+
+        #  copy rep_hill.geo if exists
 #        rep_hill_path = os.path.join(input_dir, 'rep_hill.geo')
 #        if os.path.exists(rep_hill_path):
 #            shutil.copy(rep_hill_path, os.path.join(host_path_in, 'rep_hill.geo'))
@@ -169,13 +191,13 @@ class CatflowProcessor(BaseProcessor):
         os.system(f'cp -r {input_dir}/* {host_path_in}/')
         logging.info("✅ Copied input folder contents to %s", host_path_in)
 
-        image_name = 'ghcr.io/vforwater/tbr_catflow:v0.9.2.1'
+        image_name = 'ghcr.io/vforwater/tbr_catflow:v0.9.5.1'
         container_name = f'catflow_tool_{os.urandom(5).hex()}'
         container_in = '/in'
         container_out = '/out'
         mounts = [
-            {'type': 'bind', 'source': f'/data/geoapi_data/in/{user}/{path}', 'target': container_in, 'read_only': True},
-            {'type': 'bind', 'source': f'/data/geoapi_data/out/{user}/{path}', 'target': container_out}
+            {'type': 'bind', 'source': server_path_in, 'target': container_in, 'read_only': True},
+            {'type': 'bind', 'source': server_path_out, 'target': container_out}
         ]
 
         environment = {'TOOL_RUN': 'make_representative_hillslope'}
@@ -213,44 +235,44 @@ class CatflowProcessor(BaseProcessor):
         preview_images = []
 
 
-#        import shutil
-        logging.info("🔍 pdftoppm found at:", shutil.which("pdftoppm"))
-        logging.info("📁 Full PATH:", os.environ.get("PATH"))
-        poppler_path = shutil.which("pdftoppm")
-        if poppler_path:
-            poppler_dir = os.path.dirname(poppler_path)
-        else:
-            poppler_dir = None  # Or raise a helpful error
+# #        import shutil
+#        logging.info("🔍 pdftoppm found at:", shutil.which("pdftoppm"))
+#        logging.info("📁 Full PATH:", os.environ.get("PATH"))
+#        poppler_path = shutil.which("pdftoppm")
+#        if poppler_path:
+#            poppler_dir = os.path.dirname(poppler_path)
+#        else:
+#            poppler_dir = None  # Or raise a helpful error
 
 
-        def safe_convert(pdf_path, output_path):
-            try:
-                pages = convert_from_path(pdf_path, dpi=150, first_page=1, last_page=1, poppler_path="/usr/bin")
-                if pages:
-                    pages[0].save(output_path, 'PNG')
-                    return True
-            except Exception as e:
-                logging.error(f"❌ Error converting {os.path.basename(pdf_path)} to image: {e}")
-            return False
+#        def safe_convert(pdf_path, output_path):
+#            try:
+#                pages = convert_from_path(pdf_path, dpi=150, first_page=1, last_page=1, poppler_path="/usr/bin")
+#                if pages:
+#                    pages[0].save(output_path, 'PNG')
+#                    return True
+#            except Exception as e:
+#                logging.error(f"❌ Error converting {os.path.basename(pdf_path)} to image: {e}")
+#            return False
 
-        def with_timeout(pdf_path, output_path, timeout=60):
-            proc = multiprocessing.Process(target=safe_convert, args=(pdf_path, output_path))
-            proc.start()
-            proc.join(timeout)
-            if proc.is_alive():
-                logging.warning(f"⏳ Conversion timeout for: {pdf_path}")
-                proc.terminate()
-                proc.join()
+#        def with_timeout(pdf_path, output_path, timeout=60):
+#            proc = multiprocessing.Process(target=safe_convert, args=(pdf_path, output_path))
+#            proc.start()
+#            proc.join(timeout)
+#            if proc.is_alive():
+#                logging.warning(f"⏳ Conversion timeout for: {pdf_path}")
+#                proc.terminate()
+#                proc.join()
 
-        if os.path.exists(plots_dir):
-            for fname in os.listdir(plots_dir):
-                if fname.endswith('.pdf'):
-                    pdfs.append(fname)
-                    pdf_path = os.path.join(plots_dir, fname)
-                    img_path = os.path.join(preview_dir, f"{os.path.splitext(fname)[0]}_page1.png")
-                    with_timeout(pdf_path, img_path, timeout=60)
-                    if os.path.exists(img_path):
-                        preview_images.append(f'plots_preview/{os.path.basename(img_path)}')
+#        if os.path.exists(plots_dir):
+#            for fname in os.listdir(plots_dir):
+#                if fname.endswith('.pdf'):
+#                    pdfs.append(fname)
+#                    pdf_path = os.path.join(plots_dir, fname)
+#                    img_path = os.path.join(preview_dir, f"{os.path.splitext(fname)[0]}_page1.png")
+#                    with_timeout(pdf_path, img_path, timeout=60)
+#                    if os.path.exists(img_path):
+#                        preview_images.append(f'plots_preview/{os.path.basename(img_path)}')
 
         outputs = {
             'container_status': status,
@@ -258,8 +280,8 @@ class CatflowProcessor(BaseProcessor):
             'dir': server_path_out,
             'error': error,
             'tool_logs': tool_logs,
-            'plots': pdfs,
-            'preview_images': preview_images
+#            'plots': pdfs,
+#            'preview_images': preview_images
         }
 
         return mimetype, outputs
