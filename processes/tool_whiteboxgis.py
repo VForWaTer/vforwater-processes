@@ -23,6 +23,7 @@ PROCESS_METADATA = {
         'href': 'https://github.com/VForWaTer/tool_whiteboxgis',
         'hreflang': 'en-US'
     }],
+    'jobControlOptions': ['async-execute'],
     'inputs': {
         'raster_file': {
             'title': 'Input raster file path',

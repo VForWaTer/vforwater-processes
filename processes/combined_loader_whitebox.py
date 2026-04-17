@@ -24,6 +24,7 @@ PROCESS_METADATA = {
         'de': 'Lädt Datensätze aus dem Metakatalog und führt Hillslope-Analyse mit WhiteboxGIS durch.'
     },
     'keywords': ['loader', 'whitebox', 'chain', 'raster', 'hydrology'],
+    'jobControlOptions': ['async-execute'],
     'inputs': {
         'timeseries_ids': {
             'title': 'List of Timeseries',

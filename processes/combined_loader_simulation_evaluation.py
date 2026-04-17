@@ -23,6 +23,7 @@ PROCESS_METADATA = {
         "de": "Lädt Zeitreihendaten mit dem V-FOR-WaTer-Loader und wertet Simulationsergebnisse mit dem simulation_evaluation-Container aus."
     },
     "keywords": ["loader", "simulation", "evaluation", "timeseries", "camels", "chain"],
+    "jobControlOptions": ["async-execute"],
     "inputs": {
         "timeseries_ids": {
             "title": "List of Timeseries",

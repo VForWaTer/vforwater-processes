@@ -23,6 +23,7 @@ PROCESS_METADATA = {
         'href': 'https://github.com/VForWaTer/tool_whiteboxgis',
         'hreflang': 'en-US'
     }],
+    'jobControlOptions': ['async-execute'],
     'inputs': {
         'tool_name': {
             'title': 'Whitebox Tool Name',

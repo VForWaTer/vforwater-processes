@@ -68,6 +68,7 @@ PROCESS_METADATA = {
         'href': 'https://github.com/VForWaTer/tool_vforwater_loader',
         'hreflang': 'en-US'
     }],
+    'jobControlOptions': ['async-execute'],
     'inputs': {
         'timeseries_ids': {
             'title': 'List of Timeseries',

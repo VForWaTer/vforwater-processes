@@ -38,6 +38,7 @@ PROCESS_METADATA = {
         'href': 'https://github.com/VForWaTer/tool_catflow',
         'hreflang': 'en-US'
     }],
+    'jobControlOptions': ['async-execute'],
     'inputs': {
         'input_dir': {
             'title': 'Input Folder',

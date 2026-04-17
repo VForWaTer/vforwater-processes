@@ -26,6 +26,7 @@ PROCESS_METADATA = {
         "href": "https://github.com/VForWaTer/simulation_evaluation/releases/tag/v1.0.0",
         "hreflang": "en-US"
     }],
+    "jobControlOptions": ["async-execute"],
     "inputs": {
         "index_column": {
             "title": "Index column",
