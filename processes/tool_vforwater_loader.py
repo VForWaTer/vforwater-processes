@@ -41,7 +41,7 @@ from podman import PodmanClient
 
 #: Process metadata and description
 PROCESS_METADATA = {
-    'version': '0.15.4',
+    'version': '0.15.6',
     'id': 'vforwater_loader',
     'title': {
         'en': 'Dataset Loader',
@@ -295,7 +295,10 @@ class VforwaterLoaderProcessor(BaseProcessor):
         # image_name = 'tool_vforwater_loader:latest' # TODO: used for test; still valid?
         # image_name = 'tool_vforwater_loader:latest'
 #        image_name = 'tbr_vforwater_loader:dev1'
-        image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:v0.15.5'
+
+#        image_name = 'ghcr.io/safabouguezzi/tbr_vforwater_loader:v3.2'
+
+        image_name = 'ghcr.io/vforwater/tbr_vforwater_loader:v0.15.6'
         container_name = f'tool_vforwater_loader_{os.urandom(5).hex()}'
 
         container_in = '/in'
