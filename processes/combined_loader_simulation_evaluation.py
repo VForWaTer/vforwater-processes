@@ -3,6 +3,7 @@ import json
 import os
 import glob
 import shutil
+import urllib.parse
 
 from pygeoapi.process.base import BaseProcessor
 from processes.tool_vforwater_loader import VforwaterLoaderProcessor
@@ -15,8 +16,8 @@ PROCESS_METADATA = {
     "id": "combined_loader_simulation_evaluation",
     "name": "ChainedLoaderSimulationEvaluation",
     "title": {
-        "en": "Loader + Simulation Evaluation",
-        "de": "Loader + Simulation Evaluation"
+        "en": "Evaluation Tool",
+        "de": "Simulation Evaluation Tool"
     },
     "description": {
         "en": "Loads timeseries datasets with the V-FOR-WaTer loader and evaluates simulation results against observations using the simulation_evaluation container.",
@@ -239,6 +240,25 @@ class CombinedLoaderSimulationEvaluationProcessor(BaseProcessor):
         if isinstance(sim_output, str):
             sim_output = json.loads(sim_output)
 
+
+
+
+        html_files = []
+        html_dir_host = os.path.join(host_out_path, "simulation")
+
+        if os.path.isdir(html_dir_host):
+            for fname in sorted(os.listdir(html_dir_host)):
+                full = os.path.join(html_dir_host, fname)
+                if not os.path.isfile(full):
+                    continue
+
+                if fname.lower().endswith(".html"):
+                    rel = os.path.relpath(full, host_out_path).replace("\\", "/")
+                    html_files.append(rel)
+
+        else:
+            logging.info("ℹ No 'simulation' directory found at: %s", host_out_path)
+
         return mimetype, {
             "value": sim_output.get("value", "failed"),
             "dir": server_out_path , #sim_output.get("dir"),
@@ -246,6 +266,7 @@ class CombinedLoaderSimulationEvaluationProcessor(BaseProcessor):
             "simulation_dir": sim_output.get("dir"),
             "container_status": sim_output.get("container_status", "unknown"),
             "error": sim_output.get("error", "none"),
+            'plots': html_files,
             "tool_logs": sim_output.get("tool_logs", "")
         }
 

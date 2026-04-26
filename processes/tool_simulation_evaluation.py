@@ -169,7 +169,7 @@ class SimulationEvaluationProcessor(BaseProcessor):
 
         image_name = "ghcr.io/vforwater/simulation_evaluation:v3.0.0"
 
-#        image_name = "ghcr.io/safabouguezzi/simulation_evaluation:latest"
+#        image_name = "ghcr.io/safabouguezzi/simulation_evaluation:v2.7"
 #        image_name = "ghcr.io/balazsbis/simulation_evaluation:2.0"
 #        image_name = "ghcr.io/vforwater/simulation_evaluation:latest"
 #        image_name = "ghcr.io/vforwater/simulation_evaluation:v1.0.0"
