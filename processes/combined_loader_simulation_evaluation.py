@@ -194,7 +194,7 @@ class CombinedLoaderSimulationEvaluationProcessor(BaseProcessor):
 
         # 2) Copy loader output CSV(s) to simulation/sim
         for src in csv_files:
-            dst = os.path.join(sim_dir, os.path.basename(src))
+            dst = os.path.join(obs_dir, os.path.basename(src))
             shutil.copy2(src, dst)
 
         # 3) Build observation/simulation patterns
@@ -205,10 +205,10 @@ class CombinedLoaderSimulationEvaluationProcessor(BaseProcessor):
         logging.info("simulation_pattern: %s", simulation_pattern)
 
         if not glob.glob(observation_pattern):
-            raise RuntimeError(f"No uploaded observation CSV found in: {obs_dir}")
+            raise RuntimeError(f"No uploaded simulation CSV found in: {sim_dir}")
 
         if not glob.glob(simulation_pattern):
-            raise RuntimeError(f"No loader simulation CSV found in: {sim_dir}")
+            raise RuntimeError(f"No loader observation CSV found in: {obs_dir}")
 
         obs_files = sorted(glob.glob(observation_pattern))
         sim_files = sorted(glob.glob(simulation_pattern))
