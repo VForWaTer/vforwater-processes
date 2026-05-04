@@ -20,11 +20,24 @@ PROCESS_METADATA = {
         "de": "Simulation Evaluation Tool"
     },
     "description": {
-        "en": "Loads timeseries datasets with the V-FOR-WaTer loader and evaluates simulation results against observations using the simulation_evaluation container.",
+        "en": "Evaluation tool - A containerized tool for evaluating hydrological simulations against observations across multiple catchments. It computes standard performance metrics and produces an interactive HTML report with time series plots and statistical summaries.",
         "de": "Lädt Zeitreihendaten mit dem V-FOR-WaTer-Loader und wertet Simulationsergebnisse mit dem simulation_evaluation-Container aus."
     },
     "keywords": ["loader", "simulation", "evaluation", "timeseries", "camels", "chain"],
     "jobControlOptions": ["async-execute"],
+    'links': [{
+        'type': 'text/html',
+        'rel': 'about',
+        'title': 'Loader GitHub',
+        'href': 'https://github.com/VForWaTer/tool_vforwater_loader',
+        'hreflang': 'en-US'
+         },
+        {
+            "type": "text/html",
+            "rel": "about",
+            "title": "Evaluation tool GitHub",
+            "href": "https://github.com/VForWaTer/simulation_evaluation"
+        }],
     "inputs": {
         "timeseries_ids": {
             "title": "List of Timeseries",

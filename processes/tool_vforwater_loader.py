@@ -64,7 +64,7 @@ PROCESS_METADATA = {
     'links': [{
         'type': 'text/html',
         'rel': 'about',
-        'title': 'information',
+        'title': 'Loader GitHub',
         'href': 'https://github.com/VForWaTer/tool_vforwater_loader',
         'hreflang': 'en-US'
     }],

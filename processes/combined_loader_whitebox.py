@@ -20,11 +20,32 @@ PROCESS_METADATA = {
         'de': 'DEM2CAT'
     },
     'description': {
-        'en': "From DEM to CATFLOW _ transformation tool: DEM2CAT is a streamlined, containerized workflow designed to automate the transformation of raw topographic and spatial datasets into model-ready hillslope geometries for the CATFLOW hydrological model. Built within the V-FOR-WaTer ecosystem and aligned with FAIR data principles, DEM2CAT minimizes manual effort, enhances reproducibility, and promotes transparent environmental modeling workflows.",
+        'en': "DEM2CAT - This workflow provides an easy, step-by-step pipeline to prepare and run hydrological simulations. It begins with tool_whiteboxgis, which processes elevation data to generate key terrain and drainage information such as flow paths and stream networks. These outputs are then passed to tool_catflow, where they are transformed into model-ready inputs like hillslopes and channel definitions. The result is a streamlined process that enables users to quickly set up and run CATFLOW simulations for analyzing catchment hydrology.",
         'de': 'Lädt Datensätze aus dem Metakatalog und führt Hillslope-Analyse mit WhiteboxGIS durch.'
     },
+    'github': {"loader":"https://github.com/VForWaTer/tool_vforwater_loader", "whitebox": "https://github.com/VForWaTer/tool_whiteboxgis" , "catflow": "https://github.com/VForWaTer/tool_catflow"},
     'keywords': ['loader', 'whitebox', 'chain', 'raster', 'hydrology'],
     'jobControlOptions': ['async-execute'],
+    'links': [
+        {
+            "type": "text/html",
+            "rel": "about",
+            "title": "Loader GitHub",
+            "href": "https://github.com/VForWaTer/tool_vforwater_loader"
+        },
+        {
+            "type": "text/html",
+            "rel": "about",
+            "title": "Whitebox GitHub",
+            "href": "https://github.com/VForWaTer/tool_whiteboxgis"
+        },
+        {
+            "type": "text/html",
+            "rel": "about",
+            "title": "CATFLOW GitHub",
+            "href": "https://github.com/VForWaTer/tool_catflow"
+        }
+    ],
     'inputs': {
         'timeseries_ids': {
             'title': 'List of Timeseries',
