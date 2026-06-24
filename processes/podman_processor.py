@@ -1,7 +1,27 @@
 import logging
 from podman import PodmanClient
 
+
+class CompletedContainer:
+    def __init__(self, name, container_id, status, logs, exit_status=None, removed=False):
+        self.name = name
+        self.id = container_id
+        self.status = status
+        self.exit_status = exit_status
+        self.removed = removed
+        self._logs = tuple(logs)
+
+    def reload(self):
+        return None
+
+    def logs(self, stream=False, *args, **kwargs):
+        return iter(self._logs) if stream else list(self._logs)
+
+
 class PodmanProcessor():
+    DEFAULT_MOUNTS = [
+        {'type': 'bind', 'source': '/lsdf', 'target': '/lsdf', 'read_only': True}
+    ]
 
     def connect(uri='unix:///run/podman/podman.sock'):
         # Connect to Podman
@@ -13,7 +33,7 @@ class PodmanProcessor():
         else:
             print("Podman service is running")
             logging.info("Podman service is running")
-            # TODO: There is a bug in the following code. Fix it
+            # TODO: There is a bug in the following code
             # version = client.version()
             # print("Release: ", version["Version"])
             # logging.info("Release: ", version["Version"])
@@ -23,11 +43,25 @@ class PodmanProcessor():
             # logging.info("Podman API: ", version["Components"][0]["Details"]["APIVersion"])
 
         return client
+
+    @staticmethod
+    def _with_default_mounts(mounts):
+        effective_mounts = list(mounts or [])
+        mounted_targets = {
+            mount.get('target')
+            for mount in effective_mounts
+            if isinstance(mount, dict)
+        }
+
+        for mount in PodmanProcessor.DEFAULT_MOUNTS:
+            if mount['target'] not in mounted_targets:
+                effective_mounts.append(mount.copy())
+
+        return effective_mounts
+
     @staticmethod
     def pull_run_image(client, image_name, container_name, environment=None, mounts=None, network_mode=None,
                        volumes=None, command=None):
-        secrets = PodmanProcessor.get_secrets()
-
         # Log available images (debug only) — guard so it never breaks runtime
         try:
             if hasattr(client, "images") and hasattr(client.images, "list"):
@@ -55,18 +89,28 @@ class PodmanProcessor():
 
         print(f"Running Podman container: {container_name}")
         logging.info(f"Running Podman container: {container_name}")
+        effective_mounts = PodmanProcessor._with_default_mounts(mounts)
+        logging.info(f"Using Podman mounts: {effective_mounts}")
+        container = None
+        container_id = None
+        container_status = "unknown"
+        exit_status = None
+        logs = []
+        removed = False
+        result = None
         try:
             container = client.containers.run(
                 image=image_name,
                 detach=True,
                 name=container_name,
                 environment=environment,
-                mounts=mounts,
+                mounts=effective_mounts,
                 network_mode=network_mode,
                 # volumes=volumes,
                 command=command,
                 remove=False
             )
+            container_id = getattr(container, "id", None)
             logging.info(f"Container to use: {container}")
         # except Exception as e:
         #     logging.info(f"Cannot run client.container. Error: {e}")
@@ -86,6 +130,7 @@ class PodmanProcessor():
             logging.info(f" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Container '{container.name}' logs: _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
             for line in container.logs(stream=True):
                 # print(line.strip().decode('utf-8'))
+                logs.append(line)
                 logging.info(f" - - {line.decode('utf-8')} - - ")
             logging.info(" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ finished logs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ")
 
@@ -96,10 +141,19 @@ class PodmanProcessor():
 
             # status of the container
             container.reload()
+            container_status = container.status
             print("container  exiting status :", container.status)
             logging.info(f"container  exiting status : {container.status}")
 
-            return container
+            result = CompletedContainer(
+                name=container_name,
+                container_id=container_id,
+                status=container_status,
+                logs=logs,
+                exit_status=exit_status,
+                removed=False
+            )
+            return result
         # return {
         #     "container": container,
         #     "container_status": container.status
@@ -107,6 +161,16 @@ class PodmanProcessor():
         except Exception as e:
             logging.error(f"Cannot run client.container. Error: {e}")
             raise
+        finally:
+            if container is not None:
+                try:
+                    container.remove(force=True)
+                    removed = True
+                    logging.info(f"Removed Podman container: {container_name}")
+                except Exception as cleanup_error:
+                    logging.warning(f"Could not remove Podman container '{container_name}': {cleanup_error}")
+                if result is not None:
+                    result.removed = removed
         
     def get_secrets(file_name="processes/secret.txt"):
 
